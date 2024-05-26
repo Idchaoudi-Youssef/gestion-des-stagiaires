@@ -17,7 +17,7 @@ class Intern
     public function handle(Request $request, Closure $next): Response
     {
         if (Auth::user()->usertype != 'intern') {
-            return response('Not Authorized', 403);
+            return abort(403);
         }
         return $next($request);
     }
