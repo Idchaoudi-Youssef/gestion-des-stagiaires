@@ -2,7 +2,7 @@
 
 @section('main-content')
 <div class="container-fluid">
-    
+
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <h1 class="h3 mb-0 text-gray-800">Tasks</h1>
         <a href="{{ route('supervisor.tasks.create') }}" class="btn btn-primary" style="margin-bottom: 10px ; font-size: 15px">Create Task</a>
@@ -22,6 +22,7 @@
                     <th>Title</th>
                     <th>Description</th>
                     <th>Intern</th>
+                    <th>state</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -31,6 +32,29 @@
                         <td>{{ $task->title }}</td>
                         <td>{{ $task->description }}</td>
                         <td>{{ $task->intern->name }}</td>
+                        <td>
+                                @php
+                                    $stateColorClass = '';
+                                    switch($task->state) {
+                                        case 'Completed':
+                                            $stateColorClass = 'bg-success'; // Green
+                                            break;
+                                        case 'Pending':
+                                            $stateColorClass = 'bg-warning'; // Yellow
+                                            break;
+                                        case 'unfinished':
+                                            $stateColorClass = 'bg-danger'; // Red
+                                            break;
+
+                                    }
+                                @endphp
+                                <div class="card {{ $stateColorClass }} text-white  " style="padding : 5px 5px 5px 5px ">
+                                   {{ $task->state }}
+                                </div>
+                            </div>
+                        </td>
+
+
                         <td>
                             <a href="{{ route('supervisor.tasks.edit', $task->id) }}" class="btn btn-warning btn-sm">Edit</a>
                             <form action="{{ route('supervisor.tasks.destroy', $task->id) }}" method="POST" style="display:inline;">

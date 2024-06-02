@@ -15,6 +15,10 @@
             <textarea name="description" id="description" class="form-control" rows="5" required>{{ $task->description }}</textarea>
         </div>
         <div class="form-group">
+            <label for="limit_date">Limit Date</label>
+            <input type="datetime-local" name="limit_date" id="limit_date" class="form-control" required >
+        </div>
+        <div class="form-group">
             <label for="intern_id">Assign to Intern</label>
             <select name="intern_id" id="intern_id" class="form-control" required>
                 @foreach($interns as $intern)

@@ -5,9 +5,58 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Models\Report;
+use App\Models\Task;
 
 class AdminController extends Controller
 {
+    public function index()
+    {
+        $internCount = User::where('usertype', 'intern')->count();
+        $supervisorCount = User::where('usertype', 'supervisor')->count();
+        $reportCount = Report::where('type', 'final')->count();
+
+        $internsPerMonth = User::selectRaw('COUNT(*) as count, MONTH(created_at) as month')
+            ->where('usertype', 'intern')
+            ->groupBy('month')
+            ->pluck('count', 'month')
+            ->toArray();
+
+        // Fill in missing months with 0
+        $internsData = array_fill(1, 12, 0);
+        foreach ($internsPerMonth as $month => $count) {
+            $internsData[$month] = $count;
+        }
+
+        // Static data for the pie chart
+        $tasksData = [20, 10, 5]; // Example: Completed, In Progress, Pending
+        $internNames = ['Completed', 'In Progress', 'Pending'];
+
+        return view('admin.home', compact('internCount', 'supervisorCount', 'reportCount', 'internsData', 'internNames', 'tasksData'));
+    }
+
+
+    public function showAssignForm()
+    {
+        $interns = User::where('usertype', 'intern')->get();
+        $supervisors = User::where('usertype', 'supervisor')->get();
+
+        return view('admin.assign', compact('interns', 'supervisors'));
+    }
+
+    // Process the form to assign interns to supervisors
+    public function assignInternsToSupervisors(Request $request)
+    {
+        $request->validate([
+            'intern_id' => 'required|exists:users,id',
+            'supervisor_ids' => 'required|array',
+            'supervisor_ids.*' => 'exists:users,id',
+        ]);
+
+        $intern = User::find($request->intern_id);
+        $intern->supervisors()->sync($request->supervisor_ids);
+
+        return redirect()->route('admin.showAssignForm')->with('success', 'Intern assigned to supervisors successfully.');
+    }
     public function getUsers()
     {
         $users = User::where('usertype', '!=', 'admin')->get();

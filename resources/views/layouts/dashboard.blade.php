@@ -22,6 +22,8 @@
 
     <!-- Favicon -->
     <link href="{{ asset('img/favicon.png') }}" rel="icon" type="image/png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    @yield('scripts')
 </head>
 <body id="page-top">
 
@@ -31,7 +33,7 @@
     <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
         <!-- Sidebar - Brand -->
-        <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
+        <a class="sidebar-brand d-flex align-items-center justify-content-center">
             <div class="sidebar-brand-icon rotate-n-15">
                 <i class="fas fa-laugh-wink"></i>
             </div>
@@ -40,6 +42,80 @@
 
         <!-- Divider -->
         <hr class="sidebar-divider my-0">
+        @if(Auth::check() && Auth::user()->usertype == 'admin')
+
+        <!-- Nav Item - Dashboard -->
+        <li class="nav-item ">
+            <a class="nav-link" href="{{ route('admin.dashboard') }}">
+                <i class="fas fa-fw fa-tachometer-alt"></i>
+                <span>{{ __('Dashboard') }}</span></a>
+        </li>
+
+        <!-- Divider -->
+        <hr class="sidebar-divider">
+
+        <!-- Heading -->
+        <div class="sidebar-heading">
+            {{ __('Settings') }}
+        </div>
+
+        <!-- Nav Item - Profile -->
+        <li class="nav-item">
+            <a class="nav-link" href="{{ route('admin.users') }}">
+                <i class="fas fa-fw fa-user"></i>
+                <span>{{ __('Users') }}</span>
+            </a>
+        </li>
+
+        <!-- Nav Item - About -->
+        <li class="nav-item ">
+            <a class="nav-link" href="{{ route('admin.finalReports') }}">
+                <i class="fas fa-fw fa-file"></i>
+                <span>{{ __('Reports') }}</span>
+            </a>
+        </li>
+
+        <li class="nav-item ">
+            <a class="nav-link" href="{{ route('admin.assignInternsToSupervisors') }}">
+                <i class="fas fa-fw fa-exchange"></i>
+                <span>{{ __('Assign Interns') }}</span>
+            </a>
+        </li>
+        @endif
+        @if(Auth::check() && Auth::user()->usertype == 'supervisor')
+
+        <!-- Nav Item - Dashboard -->
+        <li class="nav-item ">
+            <a class="nav-link" href="{{ route('supervisor.dashboard') }}">
+                <i class="fas fa-fw fa-tachometer-alt"></i>
+                <span>{{ __('Dashboard') }}</span></a>
+        </li>
+
+        <!-- Divider -->
+        <hr class="sidebar-divider">
+
+        <!-- Heading -->
+        <div class="sidebar-heading">
+            {{ __('Settings') }}
+        </div>
+
+        <!-- Nav Item - Profile -->
+        <li class="nav-item">
+            <a class="nav-link" href="{{ route('supervisor.tasks') }}">
+                <i class="fas fa-fw fa-tasks"></i>
+                <span>{{ __('Tasks') }}</span>
+            </a>
+        </li>
+
+        <!-- Nav Item - About -->
+        <li class="nav-item ">
+            <a class="nav-link" href="{{ route('supervisor.weeklyReports') }}">
+                <i class="fas fa-fw fa-file"></i>
+                <span>{{ __('Reports') }}</span>
+            </a>
+        </li>
+        @endif
+        @if(Auth::check() && Auth::user()->usertype == 'intern')
 
         <!-- Nav Item - Dashboard -->
         <li class="nav-item ">
@@ -57,22 +133,28 @@
         </div>
 
         <!-- Nav Item - Profile -->
-        @if(Auth::check() && Auth::user()->usertype == 'admin')
         <li class="nav-item">
-            <a class="nav-link" href="{{ route('admin.users') }}">
-                <i class="fas fa-fw fa-user"></i>
-                <span>{{ __('Users') }}</span>
+            <a class="nav-link" href="{{ route('intern.tasks') }}">
+                <i class="fas fa-fw fa-tasks"></i>
+                <span>{{ __('Tasks') }}</span>
             </a>
         </li>
-    @endif
+
         <!-- Nav Item - About -->
         <li class="nav-item ">
-            <a class="nav-link" href="{{ route('admin.finalReports') }}">
+            <a class="nav-link" href="{{ route('intern.reports') }}">
                 <i class="fas fa-fw fa-file"></i>
                 <span>{{ __('Reports') }}</span>
             </a>
         </li>
 
+        <li class="nav-item ">
+            <a class="nav-link" href="{{ route('intern.attestation') }}">
+                <i class="fas fa-fw fa-certificate "></i>
+                <span>{{ __('Attestation') }}</span>
+            </a>
+        </li>
+        @endif
         <!-- Divider -->
         <hr class="sidebar-divider d-none d-md-block">
 

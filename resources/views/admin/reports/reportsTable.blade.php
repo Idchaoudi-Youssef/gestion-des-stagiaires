@@ -26,7 +26,11 @@
                             <tr>
                                 <td>{{ $report->intern->name }}</td>
                                 <td>{{ $report->supervisor ? $report->supervisor->name : 'N/A' }}</td>
-                                <td>{{ $report->content }}</td>
+                                <td> @if($report->file)
+                                    <a href="{{ Storage::url($report->file) }}" target="_blank">View File</a>
+                                @else
+                                    {{ $report->content }}
+                                @endif</td>
                                 <td>{{ $report->created_at->format('Y-m-d H:i:s') }}</td>
                             </tr>
                         @endforeach
