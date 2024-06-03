@@ -34,10 +34,11 @@
 
         <!-- Sidebar - Brand -->
         <a class="sidebar-brand d-flex align-items-center justify-content-center">
-            <div class="sidebar-brand-icon rotate-n-15">
-                <i class="fas fa-laugh-wink"></i>
+            <div class="sidebar-brand-icon rotate-n-1" >
+                <img src="{{ asset('img/logo-placeholder.svg') }}" style="width: 50px;">
+
             </div>
-            <div class="sidebar-brand-text mx-3">SB Admin <sup>2</sup></div>
+            <div class="sidebar-brand-text mx-3">Company Name</div>
         </a>
 
         <!-- Divider -->
@@ -50,14 +51,11 @@
                 <i class="fas fa-fw fa-tachometer-alt"></i>
                 <span>{{ __('Dashboard') }}</span></a>
         </li>
+ <!-- Divider -->
+ <hr class="sidebar-divider my-0">
 
-        <!-- Divider -->
-        <hr class="sidebar-divider">
 
-        <!-- Heading -->
-        <div class="sidebar-heading">
-            {{ __('Settings') }}
-        </div>
+
 
         <!-- Nav Item - Profile -->
         <li class="nav-item">
@@ -67,20 +65,30 @@
             </a>
         </li>
 
-        <!-- Nav Item - About -->
+        <li class="nav-item ">
+            <a class="nav-link" href="{{ route('interns.list') }}">
+                <i class="fas fa-fw fa-id-card "></i>
+                <span>{{ __('Interships') }}</span>
+            </a>
+        </li>
+
+        <!-- Nav Item - About --> <!-- Divider -->
+        <hr class="sidebar-divider my-0">
         <li class="nav-item ">
             <a class="nav-link" href="{{ route('admin.finalReports') }}">
                 <i class="fas fa-fw fa-file"></i>
                 <span>{{ __('Reports') }}</span>
             </a>
-        </li>
-
+        </li> <!-- Divider -->
+        <hr class="sidebar-divider my-0">
         <li class="nav-item ">
             <a class="nav-link" href="{{ route('admin.assignInternsToSupervisors') }}">
                 <i class="fas fa-fw fa-exchange"></i>
                 <span>{{ __('Assign Interns') }}</span>
             </a>
         </li>
+        <hr class="sidebar-divider my-0">
+
         @endif
         @if(Auth::check() && Auth::user()->usertype == 'supervisor')
 

@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Models\Report;
-use App\Models\Task;
+use App\Models\Department;
+use App\Models\Internship;
+
+
 
 class AdminController extends Controller
 {
@@ -106,6 +109,7 @@ class AdminController extends Controller
             'phone' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,' . $user->id,
             'address' => 'required|string|max:255',
+            'password' => 'nullable|min:8|max:12',
 
         ]);
 
@@ -137,4 +141,86 @@ class AdminController extends Controller
         $finalReports = Report::where('type', 'final')->get();
         return view('admin.reports.reportsTable', compact('finalReports'));
     }
+    public function createInternshipData(User $user)
+    {
+        // Ensure the user is an intern
+        if ($user->usertype !== 'intern') {
+            return redirect()->route('users.index')->withErrors(['error' => 'User is not an intern.']);
+        }
+
+        $departments = Department::all();
+        return view('admin.intershipdata', compact('user', 'departments'));
+    }
+
+    public function storeInternshipData(Request $request, User $user)
+    {
+        $validatedData = $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after:start_date',
+            'department_id' => 'required|exists:departments,id',
+            'internship_period' => 'required|integer',
+        ]);
+
+        try {
+
+            Internship::create([
+                'intern_id' => $user->id,
+                'start_date' => $validatedData['start_date'],
+                'end_date' => $validatedData['end_date'],
+                'department_id' => $validatedData['department_id'],
+                'internship_period' => $validatedData['internship_period'],
+            ]);
+
+            $interns = User::where('usertype', 'intern')->get();
+            return view('admin.internslist' , compact('interns'))->with('success', 'Internship data added successfully.');
+        } catch (\Exception $e) {
+            // Log or dump the exception message for debugging
+            dd($e->getMessage());
+
+            // You can also redirect back with an error message
+            // return redirect()->back()->withErrors(['error' => 'Failed to add internship data. Please try again.']);
+        }
+    }
+
+    public function listInterns()
+    {
+        $interns = User::where('usertype', 'intern')->get();
+        return view('admin.internslist', compact('interns'));
+    }
+    public function editInternshipData(Request $request, User $user)
+    {
+        // Fetch the internship data for the user
+        $internship = $user->internship; // Assuming you have a relationship set up in the User model
+        $departments = Department::all();
+
+        // Pass the internship data and the user to the view
+        return view('admin.editintershipdata', compact('internship', 'user' , 'departments'));
+    }
+
+    public function updateInternshipData(Request $request, User $user)
+    {
+        // Fetch the internship data for the user
+        $internship = $user->internship; // Assuming you have a relationship set up in the User model
+
+        // Validate the request data
+        $validatedData = $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after:start_date',
+            'department_id' => 'required|exists:departments,id',
+            'internship_period' => 'required|integer',
+        ]);
+
+        try {
+            // Update the internship record with the validated data
+            $internship->update($validatedData);
+
+            $interns = User::where('usertype', 'intern')->get();
+            return view('admin.internslist', compact('user', 'interns'));
+        } catch (\Exception $e) {
+            // Handle exceptions and redirect back with error message
+            return redirect()->back()->withErrors(['error' => 'Failed to update internship data. Please try again.']);
+        }
+    }
+
+
 }

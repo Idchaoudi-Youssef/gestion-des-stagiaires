@@ -21,6 +21,7 @@
                 <span class="text-danger">{{ $message }}</span>
             @enderror
         </div>
+
         <div class="form-group">
             <label for="phone">Phone</label>
             <input type="text" name="phone" class="form-control" required>
@@ -28,6 +29,7 @@
                 <span class="text-danger">{{ $message }}</span>
             @enderror
         </div>
+
         <div class="form-group">
             <label for="address">Address</label>
             <input type="text" name="address" class="form-control" required>

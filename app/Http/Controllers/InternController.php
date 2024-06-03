@@ -95,6 +95,7 @@ class InternController extends Controller
         return view('intern.attestation', compact('intern'));
     }
 
+
     public function completeTask(Task $task)
     {
         // Mark the task as completed

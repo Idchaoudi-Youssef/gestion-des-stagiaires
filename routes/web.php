@@ -18,6 +18,11 @@ Route::get('/newuser', function () {
 
 Route::middleware('auth')->group(function () {
     Route::middleware([Admin::class])->group(function () {
+        Route::get('/admin/internslist', [AdminController::class, 'listInterns'])->name('interns.list');
+        Route::get('/admin/{user}/add-internship-data', [AdminController::class, 'createInternshipData'])->name('interns.addInternshipDataForm');
+        Route::post('/admin/{user}/add-internship-data', [AdminController::class, 'storeInternshipData'])->name('interns.addInternshipData');
+        Route::get('/admin/{user}/edit-internship-data', [AdminController::class, 'editInternshipData'])->name('interns.editInternshipDataForm');
+        Route::put('/admin/{user}/edit-internship-data', [AdminController::class, 'updateInternshipData'])->name('interns.updateInternshipData');
         Route::get('/admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
         Route::get('/admin/users', [AdminController::class, 'getUsers'])->name('admin.users');
         Route::get('/admin/users/create', [AdminController::class, 'createUser'])->name('admin.users.create');
@@ -41,6 +46,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/supervisor/weekly-reports', [SupervisorController::class, 'viewWeeklyReports'])->name('supervisor.weeklyReports');
     });
     Route::middleware([Intern::class])->group(function () {
+       // Route::get('/attestation/{id}', [InternController::class, 'showAttestation'])->name('attestation.show');
         Route::get('/tasks/filter', [InternController::class, 'filter'])->name('tasks.filter');
         Route::get('/tasks/search', [InternController::class, 'search'])->name('tasks.search');
         Route::put('/tasks/{task}/complete', [InternController::class, 'completeTask'])->name('task.complete');

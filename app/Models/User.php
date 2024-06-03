@@ -48,4 +48,8 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(User::class, 'intern_supervisor', 'supervisor_id', 'intern_id');
     }
+    public function internship()
+    {
+        return $this->hasOne(Internship::class , 'intern_id');
+    }
 }
