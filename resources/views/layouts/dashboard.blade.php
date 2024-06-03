@@ -64,6 +64,8 @@
                 <span>{{ __('Users') }}</span>
             </a>
         </li>
+        <hr class="sidebar-divider my-0">
+
 
         <li class="nav-item ">
             <a class="nav-link" href="{{ route('interns.list') }}">
@@ -71,7 +73,14 @@
                 <span>{{ __('Interships') }}</span>
             </a>
         </li>
+        <hr class="sidebar-divider my-0">
 
+        <li class="nav-item ">
+            <a class="nav-link" href="{{ route('departments.index') }}">
+                <i class="fas fa-fw fa-building "></i>
+                <span>{{ __('Departments') }}</span>
+            </a>
+        </li>
         <!-- Nav Item - About --> <!-- Divider -->
         <hr class="sidebar-divider my-0">
         <li class="nav-item ">

@@ -18,6 +18,14 @@ Route::get('/newuser', function () {
 
 Route::middleware('auth')->group(function () {
     Route::middleware([Admin::class])->group(function () {
+
+        Route::get('/admin/departments', [AdminController::class, 'indexdep'])->name('departments.index');
+        Route::get('/admin/departments/create', [AdminController::class, 'createdep'])->name('departments.create');
+        Route::post('/admin/departments', [AdminController::class, 'storedep'])->name('departments.store');
+        Route::get('/admin/departments/{department}/edit', [AdminController::class, 'editdep'])->name('departments.edit');
+        Route::put('/admin/departments/{department}', [AdminController::class, 'updatedep'])->name('departments.update');
+        Route::delete('/admin/departments/{department}', [AdminController::class, 'destroydep'])->name('departments.destroy');
+
         Route::get('/admin/internslist', [AdminController::class, 'listInterns'])->name('interns.list');
         Route::get('/admin/{user}/add-internship-data', [AdminController::class, 'createInternshipData'])->name('interns.addInternshipDataForm');
         Route::post('/admin/{user}/add-internship-data', [AdminController::class, 'storeInternshipData'])->name('interns.addInternshipData');

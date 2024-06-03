@@ -222,5 +222,51 @@ class AdminController extends Controller
         }
     }
 
+    public function indexdep()
+    {
+        $departments = Department::all();
+        return view('admin.departments.index', compact('departments'));
+    }
+
+    public function createdep()
+    {
+        return view('admin.departments.create');
+    }
+
+    public function storedep(Request $request)
+    {
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:255|unique:departments,name',
+            // Add any other validation rules as necessary
+        ]);
+
+        Department::create($validatedData);
+
+        return redirect()->route('departments.index')->with('success', 'Department created successfully.');
+    }
+
+    public function editdep(Department $department)
+    {
+        return view('admin.departments.edit', compact('department'));
+    }
+
+    public function updatedep(Request $request, Department $department)
+    {
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:255|unique:departments,name,' . $department->id,
+            // Add any other validation rules as necessary
+        ]);
+
+        $department->update($validatedData);
+
+        return redirect()->route('departments.index')->with('success', 'Department updated successfully.');
+    }
+
+    public function destroydep(Department $department)
+    {
+        $department->delete();
+        return redirect()->route('departments.index')->with('success', 'Department deleted successfully.');
+    }
+
 
 }
