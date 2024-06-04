@@ -21,7 +21,7 @@
                     <span class="text-danger">{{ $message }}</span>
                 @enderror
             </div>
-            <div class="form-group">
+            {{-- <div class="form-group">
                 <label for="department_id">Department</label>
                 <select name="department_id" class="form-control" required>
                     @foreach($departments as $department)
@@ -31,7 +31,7 @@
                 @error('department_id')
                     <span class="text-danger">{{ $message }}</span>
                 @enderror
-            </div>
+            </div> --}}
             <div class="form-group">
                 <label for="internship_period">Internship Period (Months)</label>
                 <input type="number" name="internship_period" class="form-control" value="{{ old('internship_period', $internship->internship_period) }}" required>

@@ -10,12 +10,29 @@ use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use App\Models\User;
+use App\Models\Internship;
 
 class InternController extends Controller
 {
     public function index()
     {
-        return view('intern/home');
+        $user = User::find(Auth::id());
+        // Assuming $user holds the current authenticated user
+        $internship = $user->internship;
+
+        // Calculate time left in the internship
+        $endDate = Carbon::parse($internship->end_date);
+        $now = Carbon::now();
+        $timeLeft = $now->diffInDays($endDate, false);// Set the second parameter to false to get a negative value if the date is in the past
+
+        // Number of tasks
+        $completedTasks =  $user->tasks()->where('state', 'completed')->count();
+        $pendingTasks = $user->tasks()->where('state', 'pending')->count();
+        $unfinishedTasks = $user->tasks()->where('state', 'unfinished')->count();
+
+        return view('intern/home', compact(
+            'timeLeft', 'unfinishedTasks', 'pendingTasks', 'completedTasks'
+        ));
     }
 
     public function viewTasks()
@@ -91,8 +108,21 @@ class InternController extends Controller
 
     public function attestation()
     {
-        $intern = Auth::user();
-        return view('intern.attestation', compact('intern'));
+    $user = Auth::user();
+
+
+
+    // Fetch the internship details
+    $internship = Internship::where('intern_id', $user->id)->firstOrFail();
+
+    // Signatory details (these could be hardcoded or fetched from a configuration or another model)
+    $signatory_name = 'Nom du Signataire';
+    $signatory_position = 'Poste du Signataire';
+
+    // Company SIRET
+    $company_siret = '000 000 000 00000';
+
+    return view('intern.attestation', compact('user', 'internship', 'signatory_name', 'signatory_position', 'company_siret'));
     }
 
 

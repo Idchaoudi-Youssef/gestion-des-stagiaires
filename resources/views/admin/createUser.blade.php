@@ -37,6 +37,7 @@
                 <span class="text-danger">{{ $message }}</span>
             @enderror
         </div>
+
         <div class="form-group">
             <label for="usertype">User Type</label>
             <select name="usertype" class="form-control" required>
@@ -44,6 +45,18 @@
                 <option value="supervisor">Supervisor</option>
             </select>
             @error('usertype')
+                <span class="text-danger">{{ $message }}</span>
+            @enderror
+        </div>
+
+        <div class="form-group">
+            <label for="department_id">Department</label>
+            <select name="department_id" class="form-control" required>
+                @foreach($departments as $department)
+                    <option value="{{ $department->id }}">{{ $department->name }}</option>
+                @endforeach
+            </select>
+            @error('department_id')
                 <span class="text-danger">{{ $message }}</span>
             @enderror
         </div>

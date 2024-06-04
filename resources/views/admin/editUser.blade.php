@@ -14,6 +14,7 @@
                 <span class="text-danger">{{ $message }}</span>
             @enderror
         </div>
+
         <div class="form-group">
             <label for="email">Email</label>
             <input type="email" name="email" class="form-control" value="{{ old('email', $user->email) }}" required>
@@ -29,8 +30,6 @@
                 <span class="text-danger">{{ $message }}</span>
             @enderror
         </div>
-        
-
 
         <div class="form-group">
             <label for="address">Address</label>
@@ -43,8 +42,8 @@
         <div class="form-group">
             <label for="usertype">User Type</label>
             <select name="usertype" class="form-control" required>
-                <option value="intern" {{ old('usertype', $user->usertype) === 'intern' ? 'selected' : '' }}>Intern</option>
-                <option value="supervisor" {{ old('usertype', $user->usertype) === 'supervisor' ? 'selected' : '' }}>Supervisor</option>
+                <option value="intern" {{ old('usertype', $user->usertype) == 'intern' ? 'selected' : '' }}>Intern</option>
+                <option value="supervisor" {{ old('usertype', $user->usertype) == 'supervisor' ? 'selected' : '' }}>Supervisor</option>
             </select>
             @error('usertype')
                 <span class="text-danger">{{ $message }}</span>
@@ -52,14 +51,25 @@
         </div>
 
         <div class="form-group">
-            <label for="password">Password</label>
+            <label for="department_id">Department</label>
+            <select name="department_id" class="form-control" required>
+                @foreach($departments as $department)
+                    <option value="{{ $department->id }}" {{ old('department_id', $user->department_id) == $department->id ? 'selected' : '' }}>{{ $department->name }}</option>
+                @endforeach
+            </select>
+            @error('department_id')
+                <span class="text-danger">{{ $message }}</span>
+            @enderror
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password (Leave blank to keep current password)</label>
             <input type="password" name="password" class="form-control">
             @error('password')
                 <span class="text-danger">{{ $message }}</span>
             @enderror
         </div>
 
-        <!-- Add other fields as necessary -->
         <button type="submit" class="btn btn-primary">Update</button>
     </form>
 </div>

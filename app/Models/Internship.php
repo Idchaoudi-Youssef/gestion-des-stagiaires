@@ -13,7 +13,6 @@ class Internship extends Model
         'intern_id',
         'start_date',
         'end_date',
-        'department_id',
         'internship_period',
     ];
 

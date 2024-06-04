@@ -3,46 +3,62 @@
 @section('main-content')
 <div class="print-container">
     <div class="container">
-        <div class="header">
 
-            <div class="logo" >
-                <img src="{{ asset('img/logo-placeholder.svg') }}" alt="Logo de l'entreprise" >
+        @if (\Carbon\Carbon::now()->lt(\Carbon\Carbon::parse($internship->end_date)))
+        <div class="content">
+            <div class="centered">
+                <img src="{{ asset('road.png') }}" alt="Image">
+                <h1>Your internship is not yet complete.</h1>
+                <p>The internship certificate will be available once the internship is completed.</p>
+                <a href="{{ route('intern.dashboard') }}" class="btn btn-primary">Return to Dashboard</a>
+            </div>
+        </div>
+
+        @else
+        <div class="header">
+            <div class="logo">
+                <img src="{{ asset('img/logo-placeholder.svg') }}" alt="Company Logo">
             </div>
             <div class="company-info">
                 <h4>Company Name</h4>
                 <h4>City</h4>
-                <h4>Téléphone: 00 00 00 00 00</h4>
+                <h4>Phone: 00 00 00 00 00</h4>
                 <h4>Email: contact@example.com</h4>
             </div>
         </div>
-        <div class="title">
-            <h1>Attestation de Stage</h1>
-        </div>
-        <div class="content">
-            <p>Nous, soussignés, <strong>Nom de l'Entreprise</strong>, attestons par la présente que :</p>
-            <p><strong>Nom du Stagiaire</strong></p>
-            <p>A effectué un stage au sein de notre entreprise du <strong>date de début</strong> au <strong>date de fin</strong>.</p>
-            <p>Durant cette période, <strong>Nom du Stagiaire</strong> a occupé le poste de <strong>poste occupé</strong> et a participé aux missions suivantes :</p>
-            <ul>
-                <li>Mission 1</li>
-                <li>Mission 2</li>
-                <li>Mission 3</li>
-            </ul>
-            <p>Le stagiaire a fait preuve de <strong>compétences particulières</strong> et a su s'intégrer rapidement au sein de notre équipe.</p>
-        </div>
-        <button onclick="window.print()" class="btn btn-primary print-button">Print Attestation</button>
+            <div class="title">
+                <h1>Internship Certificate</h1>
+            </div>
+            <div class="content">
+                <p>I, the undersigned, Mr. <strong>Signatory Name</strong>, acting as <strong>{{ $signatory_position }}</strong> in the company <strong>Company Name</strong>, certify that <strong>{{ $user->name }}</strong>, residing at <strong>{{ $user->address }}</strong>, completed an internship lasting <strong>{{ $internship->internship_period }} months</strong> at our company <strong>Company Name</strong> from <strong>{{ \Carbon\Carbon::parse($internship->start_date)->format('d/m/Y') }}</strong> to <strong>{{ \Carbon\Carbon::parse($internship->end_date)->format('d/m/Y') }}</strong>, in the position of <strong>{{ $internship->position }}</strong> in the <strong>{{ $user->department->name }}</strong> department.</p>
 
-        <div class="signature">
-            <p>Fait à <strong>City</strong>, le <strong>date</strong></p>
-            <p><strong>Admin</strong></p>
-            <p><strong>Directeur de l'entreprise</strong></p>
-            <br>
-            <img src="{{ asset('path/to/signature.png') }}" alt="Signature">
-        </div>
+                <p>This certificate is issued to the interested party to serve and certify as needed.</p>
+            </div>
+            <button onclick="window.print()" class="btn btn-primary print-button">Print Certificate</button>
+
+            <div class="signature">
+                <p>Done at <strong>City</strong>, on <strong>{{ \Carbon\Carbon::now('Europe/London')->format('d/m/Y') }}</strong></p>
+                <p><strong>Signatory Name</strong></p>
+                <p><strong>Company Director</strong></p>
+                <br>
+                <img src="{{ asset('img/logo-placeholder.svg') }}" alt="Signature">
+            </div>
+        @endif
     </div>
 </div>
 
 <style>
+    .centered {
+    text-align: center;
+    margin-top: 50px; /* Adjust the top margin as needed */
+}
+
+.centered img {
+    max-width: 50%;
+    height: auto;
+    margin-bottom: 20px; /* Adjust the bottom margin as needed */
+}
+
     .container {
         border: none;
         padding: 20px;
@@ -53,7 +69,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom:170px; /* Added margin between header and content */
+        margin-bottom: 170px; /* Added margin between header and content */
     }
     .header img {
         max-height: 150px;
@@ -79,37 +95,34 @@
         margin: 20px auto;
     }
     @media print {
-    body * {
-        visibility: hidden;
+        body * {
+            visibility: hidden;
+        }
+        .print-container, .print-container * {
+            visibility: visible;
+        }
+        .print-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+        .print-button {
+            display: none;
+        }
+        .not-for-print {
+            display: none;
+        }
+        .signature {
+            display: block;
+        }
+        /* Adjust font size for printed version */
+        .content,
+        .content p,
+        .content ul,
+        .content li {
+            font-size: 26px; /* Adjust the font size as needed */
+        }
     }
-    .print-container, .print-container * {
-        visibility: visible;
-    }
-    .print-container {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-    }
-    .print-button {
-        display: none;
-    }
-    .not-for-print {
-        display: none;
-    }
-    .signature {
-        display: block;
-    }
-    /* Adjust font size for printed version */
-    .content,
-    .content p,
-    .content ul,
-    .content li {
-        font-size: 26px; /* Adjust the font size as needed */
-    }
-}
-
 </style>
-
-
 @endsection

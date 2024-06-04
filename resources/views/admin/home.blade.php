@@ -16,8 +16,8 @@
                     backgroundColor: 'rgba(54, 162, 235, 0.2)',
                     borderColor: 'rgba(54, 162, 235, 1)',
                     borderWidth: 1,
-                    fill: true, // Fill the area under the line
-                    tension: 0.1 // Add some curve to the line
+                    fill: true,
+                    tension: 0.1
                 }]
             },
             options: {
@@ -28,15 +28,16 @@
                 }
             }
         });
-        // Tasks Chart
-        var ctx2 = document.getElementById('tasksChart').getContext('2d');
-        var tasksChart = new Chart(ctx2, {
+
+        // Intern Status Chart
+        var ctx2 = document.getElementById('internStatusChart').getContext('2d');
+        var internStatusChart = new Chart(ctx2, {
             type: 'pie',
             data: {
-                labels: ['Completed', 'In Progress', 'Pending'],
+                labels: @json($internStatusLabels),
                 datasets: [{
-                    label: 'Tasks',
-                    data: [20, 10, 5], // Static data for task status distribution
+                    label: 'Intern Status',
+                    data: @json($internStatusData),
                     backgroundColor: [
                         'rgba(75, 192, 192, 0.2)',
                         'rgba(255, 206, 86, 0.2)',
@@ -55,9 +56,33 @@
                 maintainAspectRatio: false
             }
         });
+
+        // Users per Department Chart
+        var ctx3 = document.getElementById('usersPerDepartmentChart').getContext('2d');
+        var usersPerDepartmentChart = new Chart(ctx3, {
+            type: 'bar',
+            data: {
+                labels: @json(array_keys($usersPerDepartment->toArray())),
+                datasets: [{
+                    label: 'Number of Users',
+                    data: @json(array_values($usersPerDepartment->toArray())),
+                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
     });
 </script>
 @endsection
+
 @section('main-content')
 
     <!-- Page Heading -->
@@ -145,12 +170,23 @@
             </div>
         </div>
 
-        <!-- Tasks Chart -->
+        <!-- Intern Status Chart -->
         <div class="col-xl-6 col-md-12 mb-4">
             <div class="card shadow h-100 py-2">
                 <div class="card-body">
                     <div class="chart-area">
-                        <canvas id="tasksChart"></canvas>
+                        <canvas id="internStatusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users per Department Chart -->
+        <div class="col-xl-6 col-md-12 mb-4">
+            <div class="card shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="usersPerDepartmentChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -158,5 +194,4 @@
 
     </div>
 
-    @endsection
-
+@endsection

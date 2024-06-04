@@ -17,6 +17,8 @@ class User extends Authenticatable
         'phone',
         'address',
         'usertype',
+        'department_id',
+        'status',
     ];
 
     protected $hidden = [
@@ -51,5 +53,9 @@ class User extends Authenticatable
     public function internship()
     {
         return $this->hasOne(Internship::class , 'intern_id');
+    }
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
     }
 }

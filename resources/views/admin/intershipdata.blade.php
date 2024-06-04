@@ -2,7 +2,7 @@
 
 @section('main-content')
 <div class="container">
- 
+
     <h1>Add Internship Data for {{ $user->name }}</h1>
 
     <form action="{{ route('interns.addInternshipDataForm', $user->id) }}" method="POST">
@@ -39,7 +39,7 @@
             @enderror
         </div>
 
-        <div class="form-group">
+        {{-- <div class="form-group">
             <label for="department_id">Department</label>
             <select name="department_id" class="form-control" required>
                 @foreach($departments as $department)
@@ -51,7 +51,7 @@
             @error('department_id')
                 <span class="text-danger">{{ $message }}</span>
             @enderror
-        </div>
+        </div> --}}
 
         <button type="submit" class="btn btn-primary">Submit</button>
     </form>

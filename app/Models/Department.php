@@ -18,4 +18,8 @@ class Department extends Model
     {
         return $this->hasMany(Internship::class);
     }
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
 }
