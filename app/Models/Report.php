@@ -15,6 +15,7 @@ class Report extends Model
         'intern_id',
         'supervisor_id',
         'admin_id',
+        'state',
     ];
 
     public function intern()

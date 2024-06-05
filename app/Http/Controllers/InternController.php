@@ -14,6 +14,7 @@ use App\Models\Internship;
 
 class InternController extends Controller
 {
+
     public function index()
     {
         $user = User::find(Auth::id());
@@ -23,17 +24,21 @@ class InternController extends Controller
         // Calculate time left in the internship
         $endDate = Carbon::parse($internship->end_date);
         $now = Carbon::now();
-        $timeLeft = $now->diffInDays($endDate, false);// Set the second parameter to false to get a negative value if the date is in the past
+        $timeLeft = $now->diffInDays($endDate, false); // Set the second parameter to false to get a negative value if the date is in the past
 
         // Number of tasks
-        $completedTasks =  $user->tasks()->where('state', 'completed')->count();
+        $completedTasks = $user->tasks()->where('state', 'completed')->count();
         $pendingTasks = $user->tasks()->where('state', 'pending')->count();
         $unfinishedTasks = $user->tasks()->where('state', 'unfinished')->count();
 
+        // Fetch interns in the same department
+        $interns = User::where('department_id', $user->department_id)->where('usertype', 'intern')->get();
+
         return view('intern/home', compact(
-            'timeLeft', 'unfinishedTasks', 'pendingTasks', 'completedTasks'
+            'timeLeft', 'unfinishedTasks', 'pendingTasks', 'completedTasks', 'interns'
         ));
     }
+
 
     public function viewTasks()
     {
@@ -74,37 +79,49 @@ class InternController extends Controller
     }
 
     public function submitReport(Request $request)
-    {
-        $request->validate([
-            'file' => 'required|file|mimes:pdf,doc,docx|max:2048',
-            'type' => 'required|in:weekly,final',
-            'supervisor_id' => 'required|exists:users,id',
-        ]);
+{
+    $rules = [
+        'file' => 'required|file|mimes:pdf,doc,docx|max:2048',
+        'type' => 'required|in:weekly,final',
+    ];
 
-        $intern = Auth::user();
+    if ($request->type === 'weekly') {
+        $rules['supervisor_id'] = 'required|exists:users,id';
+    }
+
+    $request->validate($rules);
+
+    $intern = Auth::user();
+
+    // Check if the type is weekly to find supervisor
+    if ($request->type === 'weekly') {
         $supervisor = $intern->supervisors()->find($request->supervisor_id);
 
         if (!$supervisor) {
             return redirect()->route('intern.reports')->with('error', 'Selected supervisor is not valid.');
         }
-
-        $path = $request->file('file')->store('reports', 'public');
-
-        $report = new Report();
-        $report->content = ''; // No content, since we're using a file
-        $report->type = $request->type;
-        $report->intern_id = $intern->id;
-        $report->supervisor_id = $supervisor->id;
-        $report->file = $path;
-
-        if ($request->type == 'final') {
-            $report->admin_id = 1; // Assuming admin_id 1 for simplicity
-        }
-
-        $report->save();
-
-        return redirect()->route('intern.reports')->with('success', 'Report submitted successfully.');
+    } else {
+        $supervisor = null; // Set supervisor to null if type is final
     }
+
+    $path = $request->file('file')->store('reports', 'public');
+
+    $report = new Report();
+    $report->content = ''; // No content, since we're using a file
+    $report->type = $request->type;
+    $report->intern_id = $intern->id;
+    $report->supervisor_id = $supervisor ? $supervisor->id : null; // Set supervisor_id based on type
+    $report->file = $path;
+
+    if ($request->type == 'final') {
+        $report->admin_id = 1; // Assuming admin_id 1 for simplicity
+    }
+
+    $report->save();
+
+    return redirect()->route('intern.reports')->with('success', 'Report submitted successfully.');
+}
+
 
     public function attestation()
     {

@@ -1,9 +1,10 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddStatusToUsersTable extends Migration
+class AddStateToReportsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -12,8 +13,8 @@ class AddStatusToUsersTable extends Migration
      */
     public function up()
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('status')->default('not_started')->after('usertype');
+        Schema::table('reports', function (Blueprint $table) {
+            $table->enum('state', ['approved', 'pending', 'rejected'])->default('pending');
         });
     }
 
@@ -24,8 +25,8 @@ class AddStatusToUsersTable extends Migration
      */
     public function down()
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('status');
+        Schema::table('reports', function (Blueprint $table) {
+            $table->dropColumn('state');
         });
     }
 }

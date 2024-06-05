@@ -9,7 +9,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\SupervisorController;
 use App\Http\Controllers\InternController;
 Route::get('/', function () {
-    return view('welcome');
+    return view('welcome.welcome');
 });
 
 Route::get('/newuser', function () {
@@ -18,6 +18,10 @@ Route::get('/newuser', function () {
 
 Route::middleware('auth')->group(function () {
     Route::middleware([Admin::class])->group(function () {
+        Route::post('/delete-rejected-reports', [AdminController::class, 'deleteRejectedReports'])->name('delete.rejected.reports');
+
+        Route::post('/approve-report/{report}', [AdminController::class, 'approve'])->name('approve.report');
+        Route::post('/reject-report/{report}', [AdminController::class, 'reject'] )->name('reject.report');
 
         Route::get('/admin/departments', [AdminController::class, 'indexdep'])->name('departments.index');
         Route::get('/admin/departments/create', [AdminController::class, 'createdep'])->name('departments.create');

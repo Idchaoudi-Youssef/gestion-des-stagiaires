@@ -20,10 +20,12 @@ class AdminController extends Controller
         $reportCount = Report::where('type', 'final')->count();
         Carbon::setLocale('Europe/London'); // GMT +1 during daylight saving time
         $today = Carbon::today();
+
+        // Update the status of interns whose internships have ended to 'finished'
+        Internship::whereDate('end_date', '<=', $today)->update(['status' => 'finished']);
+
         $internshipsEndingToday = Internship::whereDate('end_date', $today)->pluck('intern_id');
 
-        // Update the status of interns whose internships are ending today to 'finished'
-        User::whereIn('id', $internshipsEndingToday)->where('usertype', 'intern')->update(['status' => 'finished']);
         $internsPerMonth = User::selectRaw('COUNT(*) as count, MONTH(created_at) as month')
             ->where('usertype', 'intern')
             ->groupBy('month')
@@ -43,9 +45,9 @@ class AdminController extends Controller
             ->pluck('count', 'department');
 
         // Calculate interns by status
-        $inPeriodCount = User::where('usertype', 'intern')->where('status', 'in_period')->count();
-        $notStartedCount = User::where('usertype', 'intern')->where('status', 'not_started')->count();
-        $finishedCount = User::where('usertype', 'intern')->where('status', 'finished')->count();
+        $inPeriodCount = Internship::where('status', 'in_period')->count();
+        $notStartedCount = Internship::where('status', 'not_started')->count();
+        $finishedCount = Internship::where('status', 'finished')->count();
 
         // Data for the pie chart
         $internStatusData = [$inPeriodCount, $notStartedCount, $finishedCount];
@@ -55,6 +57,29 @@ class AdminController extends Controller
             'internCount', 'supervisorCount', 'reportCount',
             'internsData', 'usersPerDepartment', 'internStatusData', 'internStatusLabels'
         ));
+    }
+    public function approve(Report $report)
+    {
+        // Update the state of the report to "approved"
+        $report->update(['state' => 'approved']);
+
+        return redirect()->route('admin.finalReports')->with('success', 'Report approved successfully.');
+    }
+
+    public function reject(Report $report)
+    {
+        // Update the state of the report to "rejected"
+        $report->update(['state' => 'rejected']);
+
+        return redirect()->route('admin.finalReports')->with('success', 'Report rejected successfully.');
+    }
+
+    public function deleteRejectedReports()
+    {
+        // Delete all reports where the state is "rejected"
+        Report::where('state', 'rejected')->delete();
+
+        return redirect()->back()->with('success', 'Rejected reports deleted successfully.');
     }
 
 
@@ -106,9 +131,9 @@ class AdminController extends Controller
         return view('admin/createUser', compact('departments'));
     }
 
+
     public function storeUser(Request $request)
     {
-        //dd($request->all());
         $validatedData = $request->validate([
             'usertype' => 'required|string|max:10',
             'name' => 'required|string|max:255',
@@ -122,11 +147,24 @@ class AdminController extends Controller
         try {
             $validatedData['password'] = bcrypt($validatedData['password']);
             $user = User::create($validatedData);
+
+            // Create an internship record for the user with status "not_started"
+            if ($user->usertype === 'intern') {
+                // Create an internship record for the user with status "not_started"
+                Internship::create([
+                    'intern_id' => $user->id,
+                    'status' => 'not_started',
+                ]);
+            }
+
             return redirect()->route('admin.users')->with('success', 'User created successfully.');
         } catch (\Exception $e) {
+            dd($e->getMessage());
             return redirect()->back()->withInput()->withErrors(['error' => 'User creation failed. Please try again.']);
         }
+
     }
+
 
 
     public function editUser($id)
@@ -153,12 +191,21 @@ class AdminController extends Controller
         try {
             if ($request->filled('password')) {
                 $validatedData['password'] = bcrypt($validatedData['password']);
+
             } else {
                 unset($validatedData['password']);
             }
 
             $user->update($validatedData);
 
+            // Create an Intern record for the user with status "not_started"
+            if ($user->usertype === 'intern') {
+                // Create an Intern record for the user with status "not_started"
+                Internship::create([
+                    'intern_id' => $user->id,
+                    'status' => 'not_started',
+                ]);
+            }
             return redirect()->route('admin.users')->with('success', 'User updated successfully.');
         } catch (\Exception $e) {
             return redirect()->back()->withInput()->withErrors(['error' => 'User update failed. Please try again.']);
@@ -206,19 +253,16 @@ class AdminController extends Controller
         ]);
 
         try {
-            // Create internship data
-            Internship::create([
-                'intern_id' => $user->id,
+            // Update or create internship data
+            $user->internship()->updateOrCreate([], [
                 'start_date' => $validatedData['start_date'],
                 'end_date' => $validatedData['end_date'],
                 'internship_period' => $validatedData['internship_period'],
+                'status' => 'in_period',
             ]);
 
-            // Update the user's status to 'in_period'
-            $user->update(['status' => 'in_period']);
-
             $interns = User::where('usertype', 'intern')->get();
-            return view('admin.internslist', compact('interns'))->with('success', 'Internship data added successfully.');
+            return view('admin.internslist', compact('user', 'interns'));
         } catch (\Exception $e) {
             // Log or dump the exception message for debugging
             dd($e->getMessage());
@@ -227,6 +271,7 @@ class AdminController extends Controller
             // return redirect()->back()->withErrors(['error' => 'Failed to add internship data. Please try again.']);
         }
     }
+
 
     public function listInterns()
     {
@@ -253,12 +298,13 @@ class AdminController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
             'internship_period' => 'required|integer',
+
         ]);
 
         try {
             // Update the internship record with the validated data
             $internship->update($validatedData);
-            $user->update(['status' => 'in_period']);
+            $internship->update(['status' => 'in_period']);
 
             $interns = User::where('usertype', 'intern')->get();
             return view('admin.internslist', compact('user', 'interns'));

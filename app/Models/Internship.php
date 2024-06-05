@@ -14,6 +14,8 @@ class Internship extends Model
         'start_date',
         'end_date',
         'internship_period',
+        'status',
+
     ];
 
     public function intern()

@@ -23,7 +23,7 @@
                     <td>{{ $intern->name }}</td>
                     <td>{{ $intern->email }}</td>
                     <td>
-                        @if($intern->internship)
+                        @if($intern->internship->internship_period)
                             <a href="{{ route('interns.editInternshipDataForm', $intern->internship->intern_id) }}" class="btn btn-warning">Edit Internship</a>
                         @else
                             <a href="{{ route('interns.addInternshipDataForm', $intern->id) }}" class="btn btn-success">Add Internship</a>

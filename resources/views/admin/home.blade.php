@@ -182,7 +182,7 @@
         </div>
 
         <!-- Users per Department Chart -->
-        <div class="col-xl-6 col-md-12 mb-4">
+        <div class="col-xl-6 col-md-12 mb-4" style="margin: auto;">
             <div class="card shadow h-100 py-2">
                 <div class="card-body">
                     <div class="chart-area">
