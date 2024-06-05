@@ -66,13 +66,28 @@ class AdminController extends Controller
         return redirect()->route('admin.finalReports')->with('success', 'Report approved successfully.');
     }
 
-    public function reject(Report $report)
-    {
-        // Update the state of the report to "rejected"
-        $report->update(['state' => 'rejected']);
+    // public function reject(Report $report)
+    // {
+    //     // Update the state of the report to "rejected"
+    //     $report->update(['state' => 'rejected']);
 
-        return redirect()->route('admin.finalReports')->with('success', 'Report rejected successfully.');
-    }
+    //     return redirect()->route('admin.finalReports')->with('success', 'Report rejected successfully.');
+    // }
+    public function reject(Request $request, Report $report)
+{
+    $request->validate([
+        'reject_reason' => 'required|string|max:255',
+    ]);
+
+    // Update the state of the report to "rejected" and set the reject reason
+    $report->update([
+        'state' => 'rejected',
+        'reject_reason' => $request->reject_reason,
+    ]);
+
+    return redirect()->route('admin.finalReports')->with('success', 'Report rejected successfully.');
+}
+
 
     public function deleteRejectedReports()
     {

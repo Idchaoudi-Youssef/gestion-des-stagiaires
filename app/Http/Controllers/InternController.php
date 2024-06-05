@@ -77,6 +77,10 @@ class InternController extends Controller
         $reports = Report::where('intern_id', Auth::id())->with('supervisor')->get();
         return view('intern.reports.index', compact('reports'));
     }
+    public function addReport()
+    {
+        return view('intern.reports.add');
+    }
 
     public function submitReport(Request $request)
 {
@@ -131,7 +135,6 @@ class InternController extends Controller
 
     // Fetch the internship details
     $internship = Internship::where('intern_id', $user->id)->firstOrFail();
-
     // Signatory details (these could be hardcoded or fetched from a configuration or another model)
     $signatory_name = 'Nom du Signataire';
     $signatory_position = 'Poste du Signataire';
@@ -139,7 +142,7 @@ class InternController extends Controller
     // Company SIRET
     $company_siret = '000 000 000 00000';
 
-    return view('intern.attestation', compact('user', 'internship', 'signatory_name', 'signatory_position', 'company_siret'));
+    return view('intern.attestation', compact('user', 'internship', 'signatory_name', 'signatory_position', 'company_siret' ));
     }
 
 

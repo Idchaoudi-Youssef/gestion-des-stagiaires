@@ -428,11 +428,15 @@
 
 <!-- Your custom scripts -->
 <script>
-    $(document).ready(function() {
-        console.log('jQuery is working!');
-
-        $('#dataTable').DataTable(); // Replace 'yourDataTableID' with the ID of your table
+   $(document).ready(function() {
+    $('#dataTable').DataTable({
+        "error": function ( settings, helpPage, message ) {
+            // Handle the error silently without displaying to the user
+            console.log("DataTables error:", message);
+        }
     });
+});
+
 </script>
 
 

@@ -43,6 +43,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/admin/users/{user}', [AdminController::class, 'updateUser'])->name('admin.users.update');
         Route::delete('/admin/users/{user}', [AdminController::class, 'deleteUser'])->name('admin.users.delete');
         Route::get('/admin/final-reports', [AdminController::class, 'viewFinalReports'])->name('admin.finalReports');
+
         Route::get('/admin/assign', [AdminController::class, 'showAssignForm'])->name('admin.showAssignForm');
     Route::post('/admin/assign', [AdminController::class, 'assignInternsToSupervisors'])->name('admin.assignInternsToSupervisors');
 
@@ -66,6 +67,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/intern/tasks', [InternController::class, 'viewTasks'])->name('intern.tasks');
         Route::get('/intern/reports', [InternController::class, 'viewReports'])->name('intern.reports');
         Route::post('/intern/reports', [InternController::class, 'submitReport'])->name('intern.submitReport');
+        Route::get('intern/add_report' , [InternController::class, 'addReport'])->name('intern.reports.create');
         Route::get('/intern/attestation', [InternController::class, 'attestation'])->name('intern.attestation');
     });
         // Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

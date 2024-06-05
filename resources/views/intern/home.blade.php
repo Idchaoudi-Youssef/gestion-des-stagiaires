@@ -1,7 +1,33 @@
 @extends('layouts.dashboard')
 
 @section('main-content')
-
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var ctx = document.getElementById('tasksStatusChart').getContext('2d');
+        var tasksStatusChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Unfinished', 'Pending', 'Completed'],
+                datasets: [{
+                    label: 'Tasks',
+                    data: [{{ $unfinishedTasks }}, {{ $pendingTasks }}, {{ $completedTasks }}],
+                    backgroundColor: ['#FF6384', '#FFCE56', '#36A2EB'],
+                    hoverBackgroundColor: ['#FF6384', '#FFCE56', '#36A2EB']
+                }]
+            },
+            options: {
+                responsive: true,
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Tasks by Status'
+                }
+            }
+        });
+    });
+</script>
     <!-- Page Heading -->
     <h1 class="h3 mb-4 text-gray-800">{{ __('Dashboard') }}</h1>
 
@@ -78,6 +104,7 @@
             </div>
         </div>
 
+
         <!-- Completed Tasks -->
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-left-success shadow h-100 py-2">
@@ -94,32 +121,48 @@
                 </div>
             </div>
         </div>
-    </div>
-    <div class="col-xl-6 col-md-6 mb-4">
-        <div class="card shadow">
-            <div class="card-header" style="background-color: #eeeeee; color: #000000;">
-                <h6 class="m-0 font-weight-bold">Interns in the Same Department</h6>
-            </div>
+        <div class="col-xl-6 col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header" style="background-color: #eeeeee; color: #000000;">
+                    <h6 class="m-0 font-weight-bold">Interns in the Same Department</h6>
+                </div>
                 <div class="dropdown-list">
                     @foreach ($interns as $key => $intern)
-                    @php
-                        $colors = ['#E0FBE2' , '#FFFBDA', '#C0D6E8', '#F6D6D6'];
-                        $bg_color = $colors[$key % count($colors)];
-                        $text_color = '#000';
-                    @endphp
-                    <a class="dropdown-item d-flex align-items-center" style="background-color: {{ $bg_color }}; color: {{ $text_color }};">
-                        <div class="dropdown-list-image mr-3">
-                            <div class="rounded-circle placeholder text-center" style="width: 60px; height: 60px; background-color: {{ $key % 2 == 0 ? '#f8f9fa' : '#EAEAEA' }}; color: #495057; font-size: 24px; line-height: 60px;">{{ substr($intern->name, 0, 1) }}</div>
-                        </div>
-                        <div class="font-weight-bold">
-                            <div class="text-truncate">{{ $intern->name }}</div>
-                            <div class="small text-gray-700">{{ $intern->email }}</div>
-                        </div>
-                    </a>
+                        @if ($intern->id !== auth()->user()->id)
+                            @php
+                        $colors = ['#E0FBE2' , '#FFFBDA', '#C0D6E8', '#F6D6D6' ,'#D0CAFF', '#CAFFFE'];
+                                $bg_color = $colors[$key % count($colors)];
+                                $text_color = '#000';
+                            @endphp
+                            <a class="dropdown-item d-flex align-items-center" style="background-color: {{ $bg_color }}; color: {{ $text_color }};">
+                                <div class="dropdown-list-image mr-3">
+                                    <div class="rounded-circle placeholder text-center" style="width: 60px; height: 60px; background-color: {{ $key % 2 == 0 ? '#f8f9fa' : '#EAEAEA' }}; color: #495057; font-size: 24px; line-height: 60px;">{{ substr($intern->name, 0, 1) }}</div>
+                                </div>
+                                <div class="font-weight-bold">
+                                    <div class="text-truncate">{{ $intern->name }}</div>
+                                    <div class="small text-gray-700">{{ $intern->email }}</div>
+                                </div>
+                            </a>
+                        @endif
                     @endforeach
+                </div>
+            </div>
+        </div>
+
+    <div class="col-xl-6 col-md-6 mb-4">
+        <div class="card shadow" >
+            <div class="card-header" style="background-color: #eeeeee; color: #000000;">
+                <h6 class="m-0 font-weight-bold">Tasks by Status</h6>
+            </div>
+            <div class="card-body" style="width: 60%; margin: auto" >
+                <canvas id="tasksStatusChart"></canvas>
             </div>
         </div>
     </div>
+</div>
+</div>
+
+
 
 
 </div>

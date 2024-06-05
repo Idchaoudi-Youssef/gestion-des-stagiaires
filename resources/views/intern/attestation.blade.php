@@ -13,7 +13,22 @@
                 <a href="{{ route('intern.dashboard') }}" class="btn btn-primary">Return to Dashboard</a>
             </div>
         </div>
+        @elseif ($internship->final_report_status === 'Pending' || $internship->final_report_status === 'Rejected' || $internship->final_report_status === null)
+        <div class="content">
+            <div class="centered">
+                <img src="{{ asset('aaaaa.png') }}" alt="Image">
+                @if ($internship->final_report_status === 'Rejected')
+                    <h1>Your report  been rejected.</h1>
+                @elseif ($internship->final_report_status === 'Pending')
+                    <h1>Your report is under review.</h1>
+                @else
+                <h1>You have not submitted your report.</h1>
+                @endif
 
+                <p>The internship certificate will be available once the report is approved.</p>
+                <a href="{{ route('intern.dashboard') }}" class="btn btn-primary">Return to Dashboard</a>
+            </div>
+        </div>
         @else
         <div class="header">
             <div class="logo">
