@@ -130,7 +130,7 @@ class InternController extends Controller
     public function attestation()
     {
     $user = Auth::user();
-
+    $report = $user->reports()->where('type', 'final')->orderBy('created_at', 'desc')->first();
 
 
     // Fetch the internship details
@@ -142,7 +142,7 @@ class InternController extends Controller
     // Company SIRET
     $company_siret = '000 000 000 00000';
 
-    return view('intern.attestation', compact('user', 'internship', 'signatory_name', 'signatory_position', 'company_siret' ));
+    return view('intern.attestation', compact('user', 'internship', 'signatory_name', 'signatory_position', 'company_siret', 'report'));
     }
 
 
