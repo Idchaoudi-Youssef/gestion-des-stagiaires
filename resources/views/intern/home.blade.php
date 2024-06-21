@@ -55,7 +55,8 @@
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Time Left in Internship (Days)</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                @if ($timeLeft >= 0)
+                                @if ($timeLeft > 0)
+
                                     {{ ceil($timeLeft) }}
                                 @else
                                     Internship Ended

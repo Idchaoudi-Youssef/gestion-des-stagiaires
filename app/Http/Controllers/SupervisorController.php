@@ -14,7 +14,20 @@ class SupervisorController extends Controller
 
     public function index()
     {
-        return view('supervisor/home');
+        $supervisorId = Auth::id();
+
+        // Fetch the assigned interns and their tasks
+        $interns = User::whereHas('supervisors', function ($query) use ($supervisorId) {
+            $query->where('supervisor_id', $supervisorId);
+        })->with(['tasks' => function ($query) {
+            $query->select('id', 'title', 'state', 'intern_id');
+        }])->get();
+
+        $unfinishedTasks = Task::where('state', 'unfinished')->where('supervisor_id', $supervisorId)->count();
+        $pendingTasks = Task::where('state', 'Pending')->where('supervisor_id', $supervisorId)->count();
+        $completedTasks = Task::where('state', 'Completed')->where('supervisor_id', $supervisorId)->count();
+
+        return view('supervisor/home', compact('interns', 'unfinishedTasks', 'pendingTasks', 'completedTasks'));
     }
 
     public function viewTasks()
@@ -116,7 +129,7 @@ class SupervisorController extends Controller
         $task->state = 'Pending';
         $task->limit_date = Carbon::parse($request->limit_date);
 
-        
+
 
         $task->save();
 
