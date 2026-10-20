@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\ReportState;
+use App\Enums\ReportType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -17,7 +19,16 @@ class Report extends Model
         'admin_id',
         'state',
         'reject_reason',
+        'file',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'type' => ReportType::class,
+            'state' => ReportState::class,
+        ];
+    }
 
     public function intern()
     {

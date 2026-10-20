@@ -5,8 +5,16 @@
 
     <h1>Add Internship Data for {{ $user->name }}</h1>
 
-    <form action="{{ route('interns.addInternshipDataForm', $user->id) }}" method="POST">
+    <form action="{{ route('interns.addInternshipData', $user->id) }}" method="POST">
         @csrf
+
+        <div class="form-group">
+            <label for="position">Position</label>
+            <input type="text" name="position" class="form-control" value="{{ old('position') }}" required>
+            @error('position')
+                <span class="text-danger">{{ $message }}</span>
+            @enderror
+        </div>
 
         <div class="form-group">
             <label for="internship_period">Internship Period</label>

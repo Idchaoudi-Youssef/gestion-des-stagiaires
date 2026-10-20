@@ -42,8 +42,10 @@
         <div class="form-group">
             <label for="usertype">User Type</label>
             <select name="usertype" class="form-control" required>
-                <option value="intern" {{ old('usertype', $user->usertype) == 'intern' ? 'selected' : '' }}>Intern</option>
-                <option value="supervisor" {{ old('usertype', $user->usertype) == 'supervisor' ? 'selected' : '' }}>Supervisor</option>
+                <option value="intern" {{ old('usertype', $user->usertype->value) === 'intern' ? 'selected' : '' }}>Intern</option>
+                <option value="supervisor" {{ old('usertype', $user->usertype->value) === 'supervisor' ? 'selected' : '' }}>Supervisor</option>
+                <option value="admin" {{ old('usertype', $user->usertype->value) === 'admin' ? 'selected' : '' }}>Administrator</option>
+                <option value="pending" {{ old('usertype', $user->usertype->value) === 'pending' ? 'selected' : '' }}>Pending validation</option>
             </select>
             @error('usertype')
                 <span class="text-danger">{{ $message }}</span>

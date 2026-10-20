@@ -31,7 +31,7 @@
                             <td>{{ $user->email }}</td>
                             <td>{{ $user->phone }}</td>
                             <td>{{ $user->address}}</td>
-                            <td>{{ $user->usertype }}</td>
+                            <td>{{ $user->usertype->label() }}</td>
                             <td>
                                 <a href="{{ route('admin.users.edit', $user->id) }}" class="btn btn-warning btn-sm">Edit</a>
                                 <form action="{{ route('admin.users.delete', $user->id) }}" method="POST" style="display:inline;">

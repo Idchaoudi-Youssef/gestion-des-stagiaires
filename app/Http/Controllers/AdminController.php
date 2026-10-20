@@ -2,378 +2,474 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use Illuminate\Http\Request;
-use App\Models\Report;
+use App\Enums\InternshipStatus;
+use App\Enums\ReportState;
+use App\Enums\UserType;
 use App\Models\Department;
 use App\Models\Internship;
-use Carbon\Carbon;
-
-
+use App\Models\Report;
+use App\Models\User;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 
 class AdminController extends Controller
 {
-    public function index()
+    /**
+     * Statistics shown on the administrator dashboard.
+     */
+    public function index(): View
     {
-        $internCount = User::where('usertype', 'intern')->count();
-        $supervisorCount = User::where('usertype', 'supervisor')->count();
+        $internCount = User::where('usertype', UserType::Intern->value)->count();
+        $supervisorCount = User::where('usertype', UserType::Supervisor->value)->count();
+        $pendingCount = User::where('usertype', UserType::Pending->value)->count();
         $reportCount = Report::where('type', 'final')->count();
-        Carbon::setLocale('Europe/London'); // GMT +1 during daylight saving time
-        $today = Carbon::today();
 
-        // Update the status of interns whose internships have ended to 'finished'
-        Internship::whereDate('end_date', '<=', $today)->update(['status' => 'finished']);
+        // Number of interns created for each month of the current year.
+        // The grouping is done in PHP so the query stays portable between
+        // MySQL and SQLite.
+        $internsPerMonth = User::query()
+            ->where('usertype', UserType::Intern->value)
+            ->whereYear('created_at', now()->year)
+            ->get(['created_at'])
+            ->groupBy(fn (User $user) => (int) $user->created_at->month)
+            ->map(fn ($group) => $group->count());
 
-        $internshipsEndingToday = Internship::whereDate('end_date', $today)->pluck('intern_id');
-
-        $internsPerMonth = User::selectRaw('COUNT(*) as count, MONTH(created_at) as month')
-            ->where('usertype', 'intern')
-            ->groupBy('month')
-            ->pluck('count', 'month')
-            ->toArray();
-
-        // Fill in missing months with 0
+        // Fill in the months without any intern so the chart keeps 12 points.
         $internsData = array_fill(1, 12, 0);
         foreach ($internsPerMonth as $month => $count) {
             $internsData[$month] = $count;
         }
 
-        // Get users per department
+        // Number of users per department.
         $usersPerDepartment = User::selectRaw('departments.name as department, COUNT(users.id) as count')
             ->join('departments', 'users.department_id', '=', 'departments.id')
             ->groupBy('departments.name')
             ->pluck('count', 'department');
 
-        // Calculate interns by status
-        $inPeriodCount = Internship::where('status', 'in_period')->count();
-        $notStartedCount = Internship::where('status', 'not_started')->count();
-        $finishedCount = Internship::where('status', 'finished')->count();
-
-        // Data for the pie chart
-        $internStatusData = [$inPeriodCount, $notStartedCount, $finishedCount];
-        $internStatusLabels = ['In Period', 'Not Started', 'Finished'];
+        // Interns sorted by internship status.
+        $internStatusData = [
+            Internship::where('status', InternshipStatus::InPeriod->value)->count(),
+            Internship::where('status', InternshipStatus::NotStarted->value)->count(),
+            Internship::where('status', InternshipStatus::Finished->value)->count(),
+        ];
+        $internStatusLabels = [
+            InternshipStatus::InPeriod->label(),
+            InternshipStatus::NotStarted->label(),
+            InternshipStatus::Finished->label(),
+        ];
 
         return view('admin.home', compact(
-            'internCount', 'supervisorCount', 'reportCount',
+            'internCount', 'supervisorCount', 'pendingCount', 'reportCount',
             'internsData', 'usersPerDepartment', 'internStatusData', 'internStatusLabels'
         ));
     }
-    public function approve(Report $report)
-    {
-        // Update the state of the report to "approved"
-        $report->update(['state' => 'approved']);
 
-        return redirect()->route('admin.finalReports')->with('success', 'Report approved successfully.');
+    /**
+     * Approve a final report submitted by an intern.
+     */
+    public function approve(Request $request, Report $report): RedirectResponse
+    {
+        $report->update([
+            'state' => ReportState::Approved->value,
+            'admin_id' => $request->user()->id,
+        ]);
+
+        return redirect()
+            ->route('admin.finalReports')
+            ->with('success', 'Report approved successfully.');
     }
 
-    // public function reject(Report $report)
-    // {
-    //     // Update the state of the report to "rejected"
-    //     $report->update(['state' => 'rejected']);
-
-    //     return redirect()->route('admin.finalReports')->with('success', 'Report rejected successfully.');
-    // }
-    public function reject(Request $request, Report $report)
-{
-    $request->validate([
-        'reject_reason' => 'required|string|max:255',
-    ]);
-
-    // Update the state of the report to "rejected" and set the reject reason
-    $report->update([
-        'state' => 'rejected',
-        'reject_reason' => $request->reject_reason,
-    ]);
-
-    return redirect()->route('admin.finalReports')->with('success', 'Report rejected successfully.');
-}
-
-
-    public function deleteRejectedReports()
+    /**
+     * Reject a final report and keep the reason given to the intern.
+     */
+    public function reject(Request $request, Report $report): RedirectResponse
     {
-        // Delete all reports where the state is "rejected"
-        Report::where('state', 'rejected')->delete();
+        $request->validate([
+            'reject_reason' => ['required', 'string', 'max:255'],
+        ]);
 
-        return redirect()->back()->with('success', 'Rejected reports deleted successfully.');
+        $report->update([
+            'state' => ReportState::Rejected->value,
+            'reject_reason' => $request->string('reject_reason')->toString(),
+            'admin_id' => $request->user()->id,
+        ]);
+
+        return redirect()
+            ->route('admin.finalReports')
+            ->with('success', 'Report rejected successfully.');
     }
 
-
-
-    public function showAssignForm()
+    /**
+     * Delete every report that was rejected.
+     */
+    public function deleteRejectedReports(): RedirectResponse
     {
-        $interns = User::where('usertype', 'intern')->get();
-        $supervisors = User::where('usertype', 'supervisor')->get();
+        $count = Report::where('state', ReportState::Rejected->value)->delete();
+
+        return redirect()
+            ->back()
+            ->with('success', "{$count} rejected report(s) deleted successfully.");
+    }
+
+    /**
+     * Form used to attach interns to supervisors.
+     */
+    public function showAssignForm(): View
+    {
+        $interns = User::where('usertype', UserType::Intern->value)->get();
+        $supervisors = User::where('usertype', UserType::Supervisor->value)->get();
 
         return view('admin.assign', compact('interns', 'supervisors'));
     }
 
-    // Process the form to assign interns to supervisors
-    public function assignInternsToSupervisors(Request $request)
+    /**
+     * Attach an intern to one or more supervisors.
+     */
+    public function assignInternsToSupervisors(Request $request): RedirectResponse
     {
-        $request->validate([
-            'intern_id' => 'required|exists:users,id',
-            'supervisor_ids' => 'required|array',
-            'supervisor_ids.*' => 'exists:users,id',
+        $validated = $request->validate([
+            'intern_id' => ['required', 'exists:users,id'],
+            'supervisor_ids' => ['required', 'array', 'min:1'],
+            'supervisor_ids.*' => ['exists:users,id'],
         ]);
 
-        $intern = User::find($request->intern_id);
-        $intern->supervisors()->sync($request->supervisor_ids);
+        $intern = User::where('usertype', UserType::Intern->value)
+            ->findOrFail($validated['intern_id']);
 
-        return redirect()->route('admin.showAssignForm')->with('success', 'Intern assigned to supervisors successfully.');
-    }
-    public function getUsers()
-    {
-        $users = User::where('usertype', '!=', 'admin')->get();
-        return view('admin/usersTable', compact('users'));
-    }
+        $supervisors = User::where('usertype', UserType::Supervisor->value)
+            ->whereIn('id', $validated['supervisor_ids'])
+            ->get();
 
-    // public function editUser(User $user)
-    // {
-    //     // Ensure the user is not an admin
-    //     if ($user->role == 'admin') {
-    //         abort(403, 'Unauthorized action.');
-    //     }
-    //     $departments = Department::all();
-
-    //     return view('admin/editUser', compact('user' , 'departments'));
-    // }
-
-
-
-    public function createUser()
-    {
-        $departments = Department::all();
-        return view('admin/createUser', compact('departments'));
-    }
-
-
-    public function storeUser(Request $request)
-    {
-        $validatedData = $request->validate([
-            'usertype' => 'required|string|max:10',
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:255',
-            'address' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users',
-            'password' => 'required|min:8|max:12',
-            'department_id' => 'required|exists:departments,id',
-        ]);
-
-        try {
-            $validatedData['password'] = bcrypt($validatedData['password']);
-            $user = User::create($validatedData);
-
-            // Create an internship record for the user with status "not_started"
-            if ($user->usertype === 'intern') {
-                // Create an internship record for the user with status "not_started"
-                Internship::create([
-                    'intern_id' => $user->id,
-                    'status' => 'not_started',
-                ]);
-            }
-
-            return redirect()->route('admin.users')->with('success', 'User created successfully.');
-        } catch (\Exception $e) {
-            dd($e->getMessage());
-            return redirect()->back()->withInput()->withErrors(['error' => 'User creation failed. Please try again.']);
+        if ($supervisors->count() !== count($validated['supervisor_ids'])) {
+            throw ValidationException::withMessages([
+                'supervisor_ids' => 'One of the selected users is not a supervisor.',
+            ]);
         }
 
+        $intern->supervisors()->sync($supervisors->pluck('id'));
+
+        return redirect()
+            ->route('admin.showAssignForm')
+            ->with('success', 'Intern assigned to supervisors successfully.');
     }
 
-
-
-    public function editUser($id)
+    /**
+     * List every account except the administrator ones.
+     */
+    public function getUsers(): View
     {
-        $user = User::findOrFail($id);
-        $departments = Department::all();
-        return view('admin/editUser', compact('user', 'departments'));
+        $users = User::where('usertype', '!=', UserType::Admin->value)->orderBy('name')->get();
+
+        return view('admin.usersTable', compact('users'));
     }
 
-    public function updateUser(Request $request, $id)
+    /**
+     * Form used to create a user.
+     */
+    public function createUser(): View
     {
-        $user = User::findOrFail($id);
+        $departments = Department::orderBy('name')->get();
 
-        $validatedData = $request->validate([
-            'usertype' => 'required|string|max:10',
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:255',
-            'address' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'nullable|min:8|max:12',
-            'department_id' => 'required|exists:departments,id',
-        ]);
+        return view('admin.createUser', compact('departments'));
+    }
 
-        try {
-            if ($request->filled('password')) {
-                $validatedData['password'] = bcrypt($validatedData['password']);
+    /**
+     * Create a user with a role chosen by the administrator.
+     */
+    public function storeUser(Request $request): RedirectResponse
+    {
+        $validated = $this->validateUser($request);
 
-            } else {
-                unset($validatedData['password']);
-            }
+        $user = User::create($validated);
 
-            $user->update($validatedData);
+        // The account was created by an administrator, so the address is
+        // already trusted.
+        $user->forceFill(['email_verified_at' => now()])->save();
 
-            // Create an Intern record for the user with status "not_started"
-            if ($user->usertype === 'intern') {
-                // Create an Intern record for the user with status "not_started"
-                Internship::create([
-                    'intern_id' => $user->id,
-                    'status' => 'not_started',
-                ]);
-            }
-            return redirect()->route('admin.users')->with('success', 'User updated successfully.');
-        } catch (\Exception $e) {
-            return redirect()->back()->withInput()->withErrors(['error' => 'User update failed. Please try again.']);
+        // An intern always needs an internship record, even before the
+        // administrator fills in the dates.
+        if ($user->usertype === UserType::Intern) {
+            $user->internship()->create([
+                'status' => InternshipStatus::NotStarted->value,
+            ]);
         }
+
+        return redirect()
+            ->route('admin.users')
+            ->with('success', 'User created successfully.');
     }
 
-
-    public function deleteUser(User $user)
+    /**
+     * Form used to edit a user.
+     */
+    public function editUser(User $user): View
     {
-        try {
-            // Ensure the user is not an admin
-            if ($user->role == 'admin') {
-                abort(403, 'Unauthorized action.');
-            }
+        $departments = Department::orderBy('name')->get();
 
-            $user->delete();
-            return redirect()->route('admin.users')->with('success', 'User deleted successfully.');
-        } catch (\Exception $e) {
-            return redirect()->back()->withErrors(['error' => 'User deletion failed. Please try again.']);
+        return view('admin.editUser', compact('user', 'departments'));
+    }
+
+    /**
+     * Update a user.
+     */
+    public function updateUser(Request $request, User $user): RedirectResponse
+    {
+        $validated = $this->validateUser($request, $user);
+
+        // Changing the email address invalidates the previous verification.
+        $emailVerifiedAt = $validated['email'] !== $user->email
+            ? null
+            : $user->email_verified_at;
+
+        $user->update($validated);
+        $user->forceFill(['email_verified_at' => $emailVerifiedAt])->save();
+
+        // Keep exactly one internship record per intern.
+        if ($user->usertype === UserType::Intern && $user->internship === null) {
+            $user->internship()->create([
+                'status' => InternshipStatus::NotStarted->value,
+            ]);
         }
+
+        return redirect()
+            ->route('admin.users')
+            ->with('success', 'User updated successfully.');
     }
-    public function viewFinalReports()
+
+    /**
+     * Delete a user. Administrators are protected: another administrator has
+     * to do it from the console.
+     */
+    public function deleteUser(Request $request, User $user): RedirectResponse
     {
-        // Fetch all final reports
-        $finalReports = Report::where('type', 'final')->get();
+        if ($request->user()->id === $user->id) {
+            return redirect()
+                ->route('admin.users')
+                ->withErrors(['error' => 'You cannot delete your own account here.']);
+        }
+
+        if ($user->usertype === UserType::Admin) {
+            abort(403, 'An administrator account cannot be deleted from this screen.');
+        }
+
+        $user->delete();
+
+        return redirect()
+            ->route('admin.users')
+            ->with('success', 'User deleted successfully.');
+    }
+
+    /**
+     * Final reports waiting for a decision.
+     */
+    public function viewFinalReports(): View
+    {
+        $finalReports = Report::where('type', 'final')->latest()->get();
+
         return view('admin.reports.reportsTable', compact('finalReports'));
     }
-    public function createInternshipData(User $user)
+
+    /**
+     * Form used to attach the internship dates to an intern.
+     */
+    public function createInternshipData(User $user): View|RedirectResponse
     {
-        // Ensure the user is an intern
-        if ($user->usertype !== 'intern') {
-            return redirect()->route('users.index')->withErrors(['error' => 'User is not an intern.']);
+        if ($user->usertype !== UserType::Intern) {
+            return redirect()
+                ->route('admin.users')
+                ->withErrors(['error' => 'This user is not an intern.']);
         }
 
-        $departments = Department::all();
+        $departments = Department::orderBy('name')->get();
+
         return view('admin.intershipdata', compact('user', 'departments'));
     }
 
-    public function storeInternshipData(Request $request, User $user)
+    /**
+     * Save the internship dates of an intern.
+     */
+    public function storeInternshipData(Request $request, User $user): RedirectResponse
     {
-        $validatedData = $request->validate([
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
-            'internship_period' => 'required|integer',
+        $validated = $request->validate([
+            'position' => ['required', 'string', 'max:255'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after:start_date'],
+            'internship_period' => ['required', 'integer', 'min:1', 'max:60'],
         ]);
 
-        try {
-            // Update or create internship data
-            $user->internship()->updateOrCreate([], [
-                'start_date' => $validatedData['start_date'],
-                'end_date' => $validatedData['end_date'],
-                'internship_period' => $validatedData['internship_period'],
-                'status' => 'in_period',
-            ]);
+        $user->internship()->updateOrCreate([], [
+            'position' => $validated['position'],
+            'start_date' => $validated['start_date'],
+            'end_date' => $validated['end_date'],
+            'internship_period' => $validated['internship_period'],
+            'status' => InternshipStatus::InPeriod->value,
+        ]);
 
-            $interns = User::where('usertype', 'intern')->get();
-            return view('admin.internslist', compact('user', 'interns'));
-        } catch (\Exception $e) {
-            // Log or dump the exception message for debugging
-            dd($e->getMessage());
-
-            // You can also redirect back with an error message
-            // return redirect()->back()->withErrors(['error' => 'Failed to add internship data. Please try again.']);
-        }
+        return redirect()
+            ->route('interns.list')
+            ->with('success', 'Internship data saved successfully.');
     }
 
-
-    public function listInterns()
+    /**
+     * List the interns.
+     */
+    public function listInterns(): View
     {
-        $interns = User::where('usertype', 'intern')->get();
+        $interns = User::where('usertype', UserType::Intern->value)->orderBy('name')->get();
+
         return view('admin.internslist', compact('interns'));
     }
-    public function editInternshipData(Request $request, User $user)
-    {
-        // Fetch the internship data for the user
-        $internship = $user->internship; // Assuming you have a relationship set up in the User model
-        $departments = Department::all();
 
-        // Pass the internship data and the user to the view
-        return view('admin.editintershipdata', compact('internship', 'user' , 'departments'));
+    /**
+     * Form used to edit the internship dates of an intern.
+     */
+    public function editInternshipData(User $user): View|RedirectResponse
+    {
+        if ($user->usertype !== UserType::Intern) {
+            return redirect()
+                ->route('admin.users')
+                ->withErrors(['error' => 'This user is not an intern.']);
+        }
+
+        $internship = $user->internship;
+        $departments = Department::orderBy('name')->get();
+
+        return view('admin.editintershipdata', compact('internship', 'user', 'departments'));
     }
 
-    public function updateInternshipData(Request $request, User $user)
+    /**
+     * Update the internship dates of an intern.
+     */
+    public function updateInternshipData(Request $request, User $user): RedirectResponse
     {
-        // Fetch the internship data for the user
-        $internship = $user->internship; // Assuming you have a relationship set up in the User model
-
-        // Validate the request data
-        $validatedData = $request->validate([
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
-            'internship_period' => 'required|integer',
-
+        $validated = $request->validate([
+            'position' => ['required', 'string', 'max:255'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after:start_date'],
+            'internship_period' => ['required', 'integer', 'min:1', 'max:60'],
         ]);
 
-        try {
-            // Update the internship record with the validated data
-            $internship->update($validatedData);
-            $internship->update(['status' => 'in_period']);
+        $user->internship()->updateOrCreate([], [
+            'position' => $validated['position'],
+            'start_date' => $validated['start_date'],
+            'end_date' => $validated['end_date'],
+            'internship_period' => $validated['internship_period'],
+            'status' => InternshipStatus::InPeriod->value,
+        ]);
 
-            $interns = User::where('usertype', 'intern')->get();
-            return view('admin.internslist', compact('user', 'interns'));
-        } catch (\Exception $e) {
-            // Handle exceptions and redirect back with error message
-            return redirect()->back()->withErrors(['error' => 'Failed to update internship data. Please try again.']);
-        }
+        return redirect()
+            ->route('interns.list')
+            ->with('success', 'Internship data updated successfully.');
     }
 
-    public function indexdep()
+    /**
+     * List the departments.
+     */
+    public function indexdep(): View
     {
-        $departments = Department::all();
+        $departments = Department::orderBy('name')->get();
+
         return view('admin.departments.index', compact('departments'));
     }
 
-    public function createdep()
+    /**
+     * Form used to create a department.
+     */
+    public function createdep(): View
     {
         return view('admin.departments.create');
     }
 
-    public function storedep(Request $request)
+    /**
+     * Create a department.
+     */
+    public function storedep(Request $request): RedirectResponse
     {
-        $validatedData = $request->validate([
-            'name' => 'required|string|max:255|unique:departments,name',
-            // Add any other validation rules as necessary
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:departments,name'],
         ]);
 
-        Department::create($validatedData);
+        Department::create($validated);
 
-        return redirect()->route('departments.index')->with('success', 'Department created successfully.');
+        return redirect()
+            ->route('departments.index')
+            ->with('success', 'Department created successfully.');
     }
 
-    public function editdep(Department $department)
+    /**
+     * Form used to edit a department.
+     */
+    public function editdep(Department $department): View
     {
         return view('admin.departments.edit', compact('department'));
     }
 
-    public function updatedep(Request $request, Department $department)
+    /**
+     * Update a department.
+     */
+    public function updatedep(Request $request, Department $department): RedirectResponse
     {
-        $validatedData = $request->validate([
-            'name' => 'required|string|max:255|unique:departments,name,' . $department->id,
-            // Add any other validation rules as necessary
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255', Rule::unique('departments', 'name')->ignore($department->id)],
         ]);
 
-        $department->update($validatedData);
+        $department->update($validated);
 
-        return redirect()->route('departments.index')->with('success', 'Department updated successfully.');
+        return redirect()
+            ->route('departments.index')
+            ->with('success', 'Department updated successfully.');
     }
 
-    public function destroydep(Department $department)
+    /**
+     * Delete a department. The users of the department are kept, they simply
+     * stop being attached to it.
+     */
+    public function destroydep(Department $department): RedirectResponse
     {
         $department->delete();
-        return redirect()->route('departments.index')->with('success', 'Department deleted successfully.');
+
+        return redirect()
+            ->route('departments.index')
+            ->with('success', 'Department deleted successfully.');
     }
 
+    /**
+     * Validation rules shared by the create and the update form.
+     *
+     * @return array<string, mixed>
+     */
+    protected function validateUser(Request $request, ?User $user = null): array
+    {
+        $validated = $request->validate([
+            'usertype' => ['required', Rule::in(UserType::assignable())],
+            'name' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'max:255'],
+            'address' => ['required', 'string', 'max:255'],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique(User::class, 'email')->ignore($user?->id),
+            ],
+            'password' => [$user === null ? 'required' : 'nullable', 'min:8', 'max:12'],
+            'department_id' => ['nullable', 'exists:departments,id'],
+        ]);
 
+        // Interns and supervisors always belong to a department.
+        if (in_array($validated['usertype'], [UserType::Intern->value, UserType::Supervisor->value], true)
+            && empty($validated['department_id'])) {
+            throw ValidationException::withMessages([
+                'department_id' => 'A department is required for interns and supervisors.',
+            ]);
+        }
+
+        if (empty($validated['password'])) {
+            unset($validated['password']);
+        }
+
+        return $validated;
+    }
 }

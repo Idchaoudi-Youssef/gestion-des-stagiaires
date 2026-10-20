@@ -33,31 +33,15 @@
                         <td>{{ $task->description }}</td>
                         <td>{{ $task->intern->name }}</td>
                         <td>
-                                @php
-                                    $stateColorClass = '';
-                                    switch($task->state) {
-                                        case 'Completed':
-                                            $stateColorClass = 'bg-success'; // Green
-                                            break;
-                                        case 'Pending':
-                                            $stateColorClass = 'bg-warning'; // Yellow
-                                            break;
-                                        case 'unfinished':
-                                            $stateColorClass = 'bg-danger'; // Red
-                                            break;
-
-                                    }
-                                @endphp
-                                <div class="card {{ $stateColorClass }} text-white  " style="padding : 5px 5px 5px 5px ">
-                                   {{ $task->state }}
-                                </div>
+                            <div class="card bg-{{ $task->state->badge() }} text-white" style="padding: 5px;">
+                                {{ $task->state->label() }}
                             </div>
                         </td>
 
 
                         <td>
-                            <a href="{{ route('supervisor.tasks.edit', $task->id) }}" class="btn btn-warning btn-sm">Edit</a>
-                            <form action="{{ route('supervisor.tasks.destroy', $task->id) }}" method="POST" style="display:inline;">
+                            <a href="{{ route('supervisor.tasks.edit', $task) }}" class="btn btn-warning btn-sm">Edit</a>
+                            <form action="{{ route('supervisor.tasks.destroy', $task) }}" method="POST" style="display:inline;">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-danger btn-sm">Delete</button>

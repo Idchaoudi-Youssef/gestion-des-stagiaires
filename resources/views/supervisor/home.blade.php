@@ -64,9 +64,9 @@
                                 @foreach($interns as $intern)
                                 <li class="mb-3">
                                     <strong>{{ $intern->name }}</strong>
-                                    <span class="ml-3 badge badge-pill badge-danger">Unfinished - {{ $intern->tasks->where('state', 'unfinished')->count() }}</span>
-                                    <span class="ml-3 badge badge-pill badge-warning">Pending - {{ $intern->tasks->where('state', 'Pending')->count() }}</span>
-                                    <span class="ml-3 badge badge-pill badge-success">Completed - {{ $intern->tasks->where('state', 'Completed')->count() }}</span>
+                                    <span class="ml-3 badge badge-pill badge-danger">Unfinished - {{ $intern->tasks->where('state', \App\Enums\TaskState::Unfinished)->count() }}</span>
+                                    <span class="ml-3 badge badge-pill badge-warning">Pending - {{ $intern->tasks->where('state', \App\Enums\TaskState::Pending)->count() }}</span>
+                                    <span class="ml-3 badge badge-pill badge-success">Completed - {{ $intern->tasks->where('state', \App\Enums\TaskState::Completed)->count() }}</span>
                                 </li>
                                 @if(!$loop->last)
                                 <hr>

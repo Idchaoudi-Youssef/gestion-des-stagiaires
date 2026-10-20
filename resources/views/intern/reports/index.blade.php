@@ -24,7 +24,7 @@
                         <tr>
                             <th>Report Content</th>
                             <th>Type</th>
-                            @if(!empty($reports->where('type', '!=', 'weekly')->first()))
+                            @if($reports->contains(fn ($report) => $report->type !== \App\Enums\ReportType::Weekly))
                                 <th>Status</th>
                                 <th>Rejection Reason</th>
                             @endif
@@ -35,24 +35,18 @@
                             <tr>
                                 <td>
                                     @if($report->file)
-                                        <a href="{{ Storage::url($report->file) }}" target="_blank">View File</a>
+                                        <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($report->file) }}" target="_blank" rel="noopener">View File</a>
                                     @else
                                         {{ $report->content }}
                                     @endif
                                 </td>
-                                <td>{{ ucfirst($report->type) }}</td>
-                                @if($report->type != 'weekly')
+                                <td>{{ $report->type->label() }}</td>
+                                @if($report->type !== \App\Enums\ReportType::Weekly)
                                     <td>
-                                        @if ($report->state == 'approved')
-                                            <span class="badge badge-success">{{ ucfirst($report->state) }}</span>
-                                        @elseif ($report->state == 'rejected')
-                                            <span class="badge badge-danger">{{ ucfirst($report->state) }}</span>
-                                        @else
-                                            <span class="badge badge-warning">{{ ucfirst($report->state) }}</span>
-                                        @endif
+                                        <span class="badge badge-{{ $report->state->badge() }}">{{ ucfirst($report->state->value) }}</span>
                                     </td>
                                     <td>
-                                        @if($report->state == 'rejected')
+                                        @if($report->state === \App\Enums\ReportState::Rejected)
                                             {{ $report->reject_reason }}
                                         @else
                                             N/A

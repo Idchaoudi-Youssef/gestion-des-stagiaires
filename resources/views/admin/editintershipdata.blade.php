@@ -8,15 +8,22 @@
             @csrf
             @method('PUT')
             <div class="form-group">
+                <label for="position">Position</label>
+                <input type="text" name="position" class="form-control" value="{{ old('position', $internship?->position) }}" required>
+                @error('position')
+                    <span class="text-danger">{{ $message }}</span>
+                @enderror
+            </div>
+            <div class="form-group">
                 <label for="start_date">Start Date</label>
-                <input type="date" name="start_date" class="form-control" value="{{ old('start_date', $internship->start_date) }}" required>
+                <input type="date" name="start_date" class="form-control" value="{{ old('start_date', $internship?->start_date?->format('Y-m-d')) }}" required>
                 @error('start_date')
                     <span class="text-danger">{{ $message }}</span>
                 @enderror
             </div>
             <div class="form-group">
                 <label for="end_date">End Date</label>
-                <input type="date" name="end_date" class="form-control" value="{{ old('end_date', $internship->end_date) }}" required>
+                <input type="date" name="end_date" class="form-control" value="{{ old('end_date', $internship?->end_date?->format('Y-m-d')) }}" required>
                 @error('end_date')
                     <span class="text-danger">{{ $message }}</span>
                 @enderror
@@ -34,7 +41,7 @@
             </div> --}}
             <div class="form-group">
                 <label for="internship_period">Internship Period (Months)</label>
-                <input type="number" name="internship_period" class="form-control" value="{{ old('internship_period', $internship->internship_period) }}" required>
+                <input type="number" name="internship_period" class="form-control" value="{{ old('internship_period', $internship?->internship_period) }}" required>
                 @error('internship_period')
                     <span class="text-danger">{{ $message }}</span>
                 @enderror

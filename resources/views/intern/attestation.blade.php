@@ -4,87 +4,107 @@
 <div class="print-container">
     <div class="container">
 
-        @if (\Carbon\Carbon::now()->lt(\Carbon\Carbon::parse($internship->end_date)))
-        <div class="content">
-            <div class="centered">
-                <img src="{{ asset('road.png') }}" alt="Image">
-                <h1>Your internship is not yet complete.</h1>
-                <p>The internship certificate will be available once the internship is completed.</p>
-                <a href="{{ route('intern.dashboard') }}" class="btn btn-primary">Return to Dashboard</a>
+        @php
+            $company = config('internship.company');
+            $signatory = config('internship.signatory');
+            $internshipOver = $internship && $internship->end_date && now()->gte($internship->end_date);
+        @endphp
+
+        @unless ($internshipOver)
+            <div class="content">
+                <div class="centered">
+                    <img src="{{ asset('road.png') }}" alt="">
+                    <h1>Your internship is not yet complete.</h1>
+                    <p>The internship certificate will be available once the internship is completed.</p>
+                    <a href="{{ route('intern.dashboard') }}" class="btn btn-primary">Return to Dashboard</a>
+                </div>
             </div>
-        </div>
-        @elseif ($report)
-            @if ($report->state === 'approved')
+        @elseif ($report && $report->state === \App\Enums\ReportState::Approved)
             <div class="attestation">
                 <div class="header">
                     <div class="logo">
                         <img src="{{ asset('img/logo-placeholder.svg') }}" alt="Company Logo">
                     </div>
                     <div class="company-info">
-                        <h4>Company Name</h4>
-                        <h4>City</h4>
-                        <h4>Phone: 00 00 00 00 00</h4>
-                        <h4>Email: contact@example.com</h4>
+                        <h4>{{ $company['name'] }}</h4>
+                        <h4>{{ $company['city'] }}</h4>
+                        <h4>Phone: {{ $company['phone'] }}</h4>
+                        <h4>Email: {{ $company['email'] }}</h4>
+                        <h4>SIRET: {{ $company['siret'] }}</h4>
                     </div>
                 </div>
                 <div class="title">
                     <h1>Internship Certificate</h1>
                 </div>
                 <div class="content">
-                    <p>I, the undersigned, Mr. <strong>Signatory Name</strong>, acting as <strong>{{ $signatory_position }}</strong> in the company <strong>Company Name</strong>, certify that <strong>{{ $user->name }}</strong>, residing at <strong>{{ $user->address }}</strong>, completed an internship lasting <strong>{{ $internship->internship_period }} months</strong> at our company <strong>Company Name</strong> from <strong>{{ \Carbon\Carbon::parse($internship->start_date)->format('d/m/Y') }}</strong> to <strong>{{ \Carbon\Carbon::parse($internship->end_date)->format('d/m/Y') }}</strong>, in the position of <strong>{{ $internship->position }}</strong> in the <strong>{{ $user->department->name }}</strong> department.</p>
+                    <p>
+                        I, the undersigned, {{ $signatory['name'] }}, acting as {{ $signatory['position'] }}
+                        in the company {{ $company['name'] }}, certify that <strong>{{ $user->name }}</strong>,
+                        residing at <strong>{{ $user->address }}</strong>, completed an internship lasting
+                        <strong>{{ $internship->internship_period }} months</strong> at our company
+                        {{ $company['name'] }} from
+                        <strong>{{ $internship->start_date?->format('d/m/Y') ?? 'an unknown date' }}</strong> to
+                        <strong>{{ $internship->end_date->format('d/m/Y') }}</strong>,
+                        in the position of <strong>{{ $internship->position ?? 'Intern' }}</strong>
+                        in the <strong>{{ $user->department?->name ?? 'general' }}</strong> department.
+                    </p>
                     <p>This certificate is issued to the interested party to serve and certify as needed.</p>
                 </div>
                 <button onclick="window.print()" class="btn btn-primary print-button">Print Certificate</button>
                 <div class="signature">
-                    <p>Done at <strong>City</strong>, on <strong>{{ \Carbon\Carbon::now('Europe/London')->format('d/m/Y') }}</strong></p>
-                    <p><strong>Signatory Name</strong></p>
-                    <p><strong>Company Director</strong></p>
+                    <p>Done at <strong>{{ $company['city'] }}</strong>, on <strong>{{ now()->format('d/m/Y') }}</strong></p>
+                    <p><strong>{{ $signatory['name'] }}</strong></p>
+                    <p><strong>{{ $signatory['position'] }}</strong></p>
                     <br>
                     <img src="{{ asset('img/logo-placeholder.svg') }}" alt="Signature">
                 </div>
             </div>
-            @elseif ($report->state === 'rejected')
+        @elseif ($report && $report->state === \App\Enums\ReportState::Rejected)
             <div class="content">
                 <div class="centered">
-                    <img src="{{ asset('aaaaa.png') }}" alt="Image">
+                    <img src="{{ asset('aaaaa.png') }}" alt="">
                     <h1>Your report has been rejected.</h1>
-                    <p>The Intern certificate will be available once the report is approved</p>
-                    <a href="{{ route('intern.reports.create') }}" class="btn btn-primary">Submit new report</a>
+                    <p>
+                        @if ($report->reject_reason)
+                            Reason: {{ $report->reject_reason }}
+                        @endif
+                    </p>
+                    <p>The internship certificate will be available once the report is approved.</p>
+                    <a href="{{ route('intern.reports.create') }}" class="btn btn-primary">Submit a new report</a>
                 </div>
             </div>
-            @elseif ($report->state === 'pending')
+        @elseif ($report && $report->state === \App\Enums\ReportState::Pending)
             <div class="content">
                 <div class="centered">
-                    <img src="{{ asset('aaaaa.png') }}" alt="Image">
+                    <img src="{{ asset('aaaaa.png') }}" alt="">
                     <h1>Your report is under review.</h1>
-                    <p>The Intern certificate will be available once the report is approved</p>
+                    <p>The internship certificate will be available once the report is approved.</p>
                     <a href="{{ route('intern.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
                 </div>
             </div>
-            @endif
-        @elseif($report === null)
-        <div class="content">
-            <div class="centered">
-                <img src="{{ asset('aaaaa.png') }}" alt="Image">
-                <h1>You have not submitted your report.</h1>
-                <p>The internship certificate will be available once the report is approved.</p>
-                <a href="{{ route('intern.reports.create') }}" class="btn btn-primary">Submit your report</a>
+        @else
+            <div class="content">
+                <div class="centered">
+                    <img src="{{ asset('aaaaa.png') }}" alt="">
+                    <h1>You have not submitted your report.</h1>
+                    <p>The internship certificate will be available once the report is approved.</p>
+                    <a href="{{ route('intern.reports.create') }}" class="btn btn-primary">Submit your report</a>
+                </div>
             </div>
-        </div>
-        @endif
+        @endunless
     </div>
 </div>
 
 <style>
     .centered {
         text-align: center;
-        margin-top: 50px; /* Adjust the top margin as needed */
+        margin-top: 50px;
     }
 
     .centered img {
         max-width: 50%;
         height: auto;
-        margin-bottom: 20px; /* Adjust the bottom margin as needed */
+        margin-bottom: 20px;
     }
 
     .container {
@@ -94,36 +114,36 @@
         margin: auto;
     }
     .attestation {
-        border: 1px solid #000; /* Add border around attestation */
+        border: 1px solid #000;
         padding: 20px;
         margin: 20px auto;
-        max-width: 600px; /* Adjust the width as needed */
+        max-width: 600px;
         background-color: #f9f9f9;
-        font-size: 14px; /* Adjust font size for screen */
+        font-size: 14px;
     }
     .header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px; /* Adjusted margin */
+        margin-bottom: 20px;
     }
     .header img {
-        max-height: 80px; /* Adjusted size */
+        max-height: 80px;
     }
     .title {
         text-align: center;
-        margin-top: 10px; /* Adjusted margin */
+        margin-top: 10px;
     }
     .content {
-        margin-top: 20px; /* Adjusted margin */
-        line-height: 1.4; /* Adjusted line-height */
+        margin-top: 20px;
+        line-height: 1.4;
     }
     .signature {
         text-align: center;
-        display: none; /* Hide signature by default */
+        display: none;
     }
     .signature img {
-        max-height: 50px; /* Adjusted size */
+        max-height: 50px;
     }
     .print-button {
         display: block;
@@ -152,28 +172,28 @@
             display: block;
         }
         .attestation {
-            max-width: 800px; /* Original width for print */
-            font-size: 26px; /* Original font size for print */
-            padding: 40px; /* Original padding for print */
+            max-width: 800px;
+            font-size: 26px;
+            padding: 40px;
             margin: auto;
-            border: none; /* Remove border for print */
+            border: none;
         }
         .header {
-            margin-bottom: 170px; /* Original margin for print */
+            margin-bottom: 170px;
         }
         .header img {
-            max-height: 150px; /* Original size for print */
+            max-height: 150px;
         }
         .title {
-            margin-top: 20px; /* Original margin for print */
+            margin-top: 20px;
         }
         .content {
-            margin-top: 30px; /* Original margin for print */
-            line-height: 1.6; /* Original line-height for print */
-            margin-bottom: 370px; /* Original margin for print */
+            margin-top: 30px;
+            line-height: 1.6;
+            margin-bottom: 370px;
         }
         .signature img {
-            max-height: 80px; /* Original size for print */
+            max-height: 80px;
         }
     }
 </style>

@@ -1,66 +1,268 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Gestion des Stagiaires
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Application web de gestion des internships: elle permet à une entreprise
+d'attribuer des stagiaires à des encadrants, de leur suivre des tâches, de
+recevoir leurs rapports (hebdomadaires et final) et de générer leur attestation
+de fin de stage.
 
-## About Laravel
+Le projet est écrit en **Laravel 12** et fonctionne avec **SQLite** par défaut
+(ou MySQL/MariaDB si vous préférez).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Fonctionnalités
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Administrateur
 
-## Learning Laravel
+- Tableau de bord avec les compteurs (interns, encadrants, rapports) et trois
+  graphiques (interns créés par mois, répartition des stages, utilisateurs
+  par département).
+- Création, modification et suppression des comptes (interns, encadrants).
+- Gestion des départements.
+- Attribution des interns à un ou plusieurs encadrants.
+- Saisie des informations de stage (dates, durée, poste occupé).
+- Validation ou rejet des rapports finaux, avec motif de rejet.
+- Suppression des rapports rejetés.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Encadrant (supervisor)
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+- Tableau de bord : interns rattachés et état de leurs tâches.
+- Création, modification et suppression des tâches, avec une date limite.
+- Consultation des rapports hebdomadaires reçus.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Intern (stagiaire)
 
-## Laravel Sponsors
+- Tableau de bord : jours restants, tâches par état, autres interns du
+  département.
+- Liste de ses tâches, filtrage par encadrant et recherche par mot-clé.
+- Passage d'une tâche en « terminée » (uniquement les tâches qui lui
+  appartiennent).
+- Envoi d'un rapport hebdomadaire ou final (PDF, Word).
+- Attestation de fin de stage, imprimable, une fois le rapport final validé.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Compte en attente (pending)
 
-### Premium Partners
+Toute personne qui s'inscrit elle-même obtient un compte **pending** : elle
+peut se connecter mais elle n'accède à aucun espace tant qu'un administrateur
+ne lui a pas attribué un rôle. Avant cette correction, une inscription
+donneait l'accès complet à l'espace stagiaire.
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+---
 
-## Contributing
+## Rôles et autorisations
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Le rôle est stocké en base et relu à **chaque requête** : révoquer un rôle
+prend effet immédiatement, sans attendre l'expiration de la session.
 
-## Code of Conduct
+| Rôle       | Peut                                                                  |
+|------------|-----------------------------------------------------------------------|
+| `admin`    | tout                                                                |
+| `supervisor` | gérer ses tâches, voir les rapports de ses interns                   |
+| `intern`   | voir et compléter ses tâches, envoyer ses rapports                   |
+| `pending`  | rien, seulement la page « en attente de validation »                 |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Les règles fines sont appliquées par `App\Policies\TaskPolicy` :
 
-## Security Vulnerabilities
+- seul l'encadrant qui a créé une tâche peut la modifier ou la supprimer ;
+- seul l'intern concerné peut passer une tâche en « terminée ».
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+## Technologies
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+| Outil              | Version / rôle                                    |
+|--------------------|---------------------------------------------------|
+| PHP                | 8.2+                                              |
+| Laravel            | 12                                                |
+| Eloquent           | ORM de Laravel                                    |
+| SQLite / MySQL     | base de données                                   |
+| Blade              | vues (SB Admin 2 + template DigiMedia)            |
+| Pest               | tests (77 tests)                                  |
+| Chart.js           | graphiques des tableaux de bord (CDN)             |
+| DataTables         | tri et recherche des tableaux (CDN)               |
+
+Le projet **n'a besoin ni de Node.js ni d'un build front** pour tourner : les
+vues utilisent les assets statiques de `public/`. Le fichier `package.json` est
+conservé pour pouvoir ajouter du Tailwind plus tard, mais il n'est pas requis
+pour faire tourner l'application.
+
+---
+
+## Installation
+
+### Prérequis
+
+- PHP **8.2** ou plus, avec les extensions `mbstring`, `openssl`, `pdo`,
+  `tokenizer`, `xml`, `ctype`, `fileinfo`, `curl`.
+- [Composer](https://getcomposer.org/).
+
+### Étapes
+
+```bash
+# 1. Récupérer le projet
+git clone https://github.com/Idchaoudi-Youssef/gestion-des-stagiaires.git
+cd gestion-des-stagiaires
+
+# 2. Installer les dépendances PHP
+composer install
+
+# 3. Créer le fichier de configuration
+cp .env.example .env        # Windows : copy .env.example .env
+
+# 4. Générer la clé de l'application
+php artisan key:generate
+
+# 5. Créer la base de données SQLite
+touch database/database.sqlite       # Windows PowerShell : New-Item database\database.sqlite
+
+# 6. Créer les tables et les données de démonstration
+php artisan migrate --seed
+
+# 7. Donner accès au dossier des fichiers envoyés
+php artisan storage:link
+
+# 8. Démarrer le serveur
+php artisan serve
+```
+
+L'application est disponible sur <http://127.0.0.1:8000>.
+
+### Comptes de démonstration
+
+Créés par `php artisan migrate --seed`. Le mot de passe est `password` pour
+tous.
+
+| Rôle         | Adresse e-mail            |
+|--------------|---------------------------|
+| Administrateur | `demo.admin@example.com`     |
+| Encadrant    | `demo.supervisor@example.com`  |
+| Stagiaire    | `demo.intern@example.com`      |
+| En attente   | `demo.pending@example.com`     |
+
+---
+
+## Configuration
+
+### Base de données
+
+Par défaut l'application utilise SQLite. Pour MySQL ou MariaDB, décommentez le
+bloc correspondant dans `.env` :
+
+```dotenv
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=gestion_des_stagiaires
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+### Identité de l'entreprise
+
+Les informations imprimées sur l'attestation de stage se configure dans `.env` :
+
+```dotenv
+COMPANY_NAME="Company Name"
+COMPANY_CITY="City"
+COMPANY_PHONE="00 00 00 00 00"
+COMPANY_EMAIL="contact@example.com"
+COMPANY_SIRET="000 000 000 00000"
+
+SIGNATORY_NAME="Signatory Name"
+SIGNATORY_POSITION="Company Director"
+```
+
+---
+
+## Tâches planifiées
+
+Deux commandes Artisan font le ménage et sont enregistrées dans le
+planificateur de Laravel :
+
+```bash
+php artisan tasks:update-states        # passe en « unfinished » les tâches en retard
+php artisan internships:close-finished # cloture les stages dont la date de fin est passée
+php artisan schedule:list              # voir le planning
+```
+
+Pour qu'elles tournent automatiquement, ajoutez cette ligne dans la crontab
+du serveur :
+
+```cron
+* * * * * cd /chemin/vers/gestion-des-stagiaires && php artisan schedule:run >> /dev/null 2>&1
+```
+
+---
+
+## Tests
+
+```bash
+php artisan test
+```
+
+Le suite couvre :
+
+- l'accès selon le rôle (qui peut voir quoi) ;
+- l'isolation des tâches d'un intern (impossible de compléter ou de chercher
+  les tâches des autres) ;
+- l'isolation des tâches d'un encadrant ;
+- la protection des comptes administrateur et la suppression des départements ;
+- le cycle de vie des états d'une tâche et d'un stage ;
+- l'ouverture de **toutes** les pages de l'application (test de fumée : une
+  page qui répond avec une erreur 500 fait échouer le test).
+
+La base de données des tests est une base SQLite en mémoire, créée et
+détruite automatiquement. Aucun fichier `.env` n'est nécessaire pour lancer
+la suite.
+
+---
+
+## Structure du projet
+
+```
+app/
+├── Enums/              # UserType, TaskState, InternshipStatus, ReportState, ReportType
+├── Console/Commands/   # tasks:update-states, internships:close-finished
+├── Http/
+│   ├── Controllers/    # Admin, Supervisor, Intern, Dashboard, Profile, Auth
+│   ├── Middleware/     # EnsureUserType : contrôle du rôle
+│   └── Requests/       # LoginRequest
+├── Models/             # User, Department, Internship, Task, Report, InternSupervisor
+├── Policies/           # TaskPolicy
+└── Services/           # TaskStateService, InternshipService
+config/
+├── internship.php      # société et signataire de l'attestation
+database/
+├── factories/          # User, Department, Task, Report, Internship
+├── migrations/         # schéma de la base
+└── seeders/            # données de démonstration
+resources/views/        # vues Blade (welcome, auth, admin, supervisor, intern)
+routes/
+├── web.php             # routes de l'application
+├── auth.php            # routes d'authentification
+└── console.php         # commandes et planificateur
+tests/
+├── Feature/            # tests fonctionnels
+└── Unit/               # tests unitaires des services
+```
+
+---
+
+## Notes de sécurité
+
+- Les mots de passe sont hachés par le cast `hashed` du modèle `User`.
+- Les fichiers envoyés par les interns sont limités à 2 Mo et aux formats
+  `pdf`, `doc`, `docx` (`mimes:pdf,doc,docx`).
+- Les requêtes qui modifient une donnée passent par des formulaires
+  protégée par `@csrf` et par la méthode HTTP adaptée (`@method('PUT')`,
+  `@method('DELETE')`).
+- La suppression d'un compte ou d'un département passe par des routes
+  `DELETE` protégées par le rôle administrateur.
+- `composer audit` ne remonte plus aucune vulnérabilité connue sur les
+  dépendances installées.
+
+---
+
+## Licence
+
+MIT — voir le fichier [LICENSE](LICENSE).

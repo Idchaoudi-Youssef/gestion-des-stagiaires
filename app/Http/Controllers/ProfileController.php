@@ -2,71 +2,98 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-
+use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
-    public function index()
+    /**
+     * The profile of the logged in user.
+     */
+    public function index(): View
     {
         return view('profile');
     }
 
-    public function update(Request $request)
+    /**
+     * Update the profile of the logged in user.
+     */
+    public function update(Request $request): RedirectResponse
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . Auth::user()->id,
-            'address' => 'nullable|string|max:255',
-            'current_password' => 'nullable|required_with:new_password',
-            'new_password' => 'nullable|min:8|max:12|required_with:current_password',
-            'password_confirmation' => 'nullable|min:8|max:12|required_with:new_password|same:new_password'
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:255'],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($user->id),
+            ],
+            'address' => ['nullable', 'string', 'max:255'],
+            'current_password' => ['nullable', 'required_with:new_password'],
+            'new_password' => ['nullable', 'required_with:current_password', 'min:8', 'max:12'],
+            'password_confirmation' => ['nullable', 'required_with:new_password', 'same:new_password'],
         ]);
 
+        // Changing the email address means the new address has to be
+        // verified again.
+        $emailVerifiedAt = $validated['email'] === $user->email
+            ? $user->email_verified_at
+            : null;
 
-        $user = User::findOrFail(Auth::user()->id);
-        $user->name = $request->input('name');
-        $user->phone = $request->input('phone');
-        $user->address = $request->input('address');
-        $user->email = $request->input('email');
+        $user->fill([
+            'name' => $validated['name'],
+            'phone' => $validated['phone'] ?? null,
+            'address' => $validated['address'] ?? null,
+            'email' => $validated['email'],
+        ]);
 
-        if (!is_null($request->input('current_password'))) {
-            if (Hash::check($request->input('current_password'), $user->password)) {
-                $user->password = $request->input('new_password');
-            } else {
-                return redirect()->back()->withErrors('Current password is incorrect.');
+        if (! empty($validated['current_password'])) {
+            if (! Hash::check($validated['current_password'], $user->password)) {
+                return redirect()
+                    ->back()
+                    ->withInput()
+                    ->withErrors(['current_password' => 'The current password is incorrect.']);
             }
+
+            $user->password = $validated['new_password'];
         }
 
+        $user->email_verified_at = $emailVerifiedAt;
         $user->save();
 
-        return redirect()->route('profile')->withSuccess('Profile updated successfully.');
+        return redirect()
+            ->route('profile')
+            ->with('success', 'Profile updated successfully.');
     }
-    public function destroy(Request $request)
+
+    /**
+     * Delete the account of the logged in user.
+     */
+    public function destroy(Request $request): RedirectResponse
     {
         $request->validate([
-            'password' => 'required',
+            'password' => ['required'],
         ]);
 
         $user = $request->user();
 
-        // Check if the provided password is correct
-        if (!Hash::check($request->password, $user->password)) {
-            return back()->withErrors(['password' => 'Password does not match our records.']);
+        if (! Hash::check($request->input('password'), $user->password)) {
+            return back()
+                ->withInput()
+                ->withErrors(['password' => 'The password does not match our records.']);
         }
-        // Logout the user
+
         Auth::logout();
-        // Delete the user
         $user->delete();
-      
 
-
-        // Redirect to the home page with a success message
-        return redirect('/')->with('success', 'Your account has been deleted.');
+        return redirect('/')
+            ->with('success', 'Your account has been deleted.');
     }
 }
-

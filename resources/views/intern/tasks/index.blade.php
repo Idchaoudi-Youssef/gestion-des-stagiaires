@@ -45,11 +45,11 @@
                     <!-- Task Items -->
                     @foreach($tasks as $task)
                         <div class="list-group-item list-group-item-action flex-column align-items-start
-                            @if($task->state == 'Pending') border-left-warning @elseif($task->state == 'Completed') border-left-success @else border-left-danger @endif">
+                            @if($task->state === \App\Enums\TaskState::Pending) border-left-warning @elseif($task->state === \App\Enums\TaskState::Completed) border-left-success @else border-left-danger @endif">
                             <div class="d-flex w-100 justify-content-between">
                                 <h5 class="mb-1">{{ $task->title }}</h5>
                                 <!-- Remaining Time -->
-                                @if($task->state == 'Pending' && (!$task->limit_date || now()->isBefore(\Carbon\Carbon::parse($task->limit_date))))
+                                @if($task->state === \App\Enums\TaskState::Pending && (!$task->limit_date || now()->isBefore(\Carbon\Carbon::parse($task->limit_date))))
                                     <small class="text-muted">
                                         @if($task->limit_date)
                                             @php
@@ -65,9 +65,9 @@
                                 @endif
                             </div>
                             <!-- Complete Task Button -->
-                            @if($task->state == 'Pending' && (!$task->limit_date || now()->isBefore(\Carbon\Carbon::parse($task->limit_date))))
+                            @if($task->state === \App\Enums\TaskState::Pending && (!$task->limit_date || now()->isBefore(\Carbon\Carbon::parse($task->limit_date))))
                                 <div class="float-right">
-                                    <form method="POST" action="{{ route('task.complete', $task->id) }}" style="display: inline;">
+                                    <form method="POST" action="{{ route('task.complete', $task) }}" style="display: inline;">
                                         @csrf
                                         @method('PUT')
                                         <button type="submit" class="btn btn-success btn-sm"><i class="fa fa-check"></i></button>
@@ -78,9 +78,11 @@
                             <p class="mb-1"> <b>{{ $task->description }}</b> </p>
                             <!-- Task State -->
                             <div class="d-flex w-100 justify-content-between">
-                                <small class="text-muted">@if($task->state == 'Pending' ) <div class="badge badge-warning"> Pending </div>@elseif($task->state == 'Completed') <div class="badge badge-success"> Completed </div>@else <div class="badge badge-danger"> Unfinished </div>@endif</small>
+                                <small class="text-muted">
+                                    <span class="badge badge-{{ $task->state->badge() }}">{{ $task->state->label() }}</span>
+                                </small>
                                 <!-- Supervisor Name -->
-                                <small class="text-muted " style="padding-top: 4px">From : {{ $task->supervisor->name }}</small>
+                                <small class="text-muted" style="padding-top: 4px">From : {{ $task->supervisor->name }}</small>
                             </div>
                         </div>
                     @endforeach

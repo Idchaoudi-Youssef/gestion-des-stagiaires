@@ -20,7 +20,7 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Handle an incoming authentication request.
+     * Handle an authentication request.
      */
     public function store(LoginRequest $request): RedirectResponse
     {
@@ -28,16 +28,8 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        if($request->user()->usertype == 'admin') {
-                return redirect('/admin/dashboard');
-        }
-        elseif($request->user()->usertype == 'supervisor') {
-            return redirect('/supervisor/dashboard');
-        }
-        elseif($request->user()->usertype == 'intern') {
-            return redirect('/intern/dashboard');
-        }   
-
+        // Every role has its own dashboard.
+        return redirect()->route($request->user()->homeRoute());
     }
 
     /**

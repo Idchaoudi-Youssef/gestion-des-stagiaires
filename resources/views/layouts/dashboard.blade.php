@@ -21,7 +21,7 @@
     <link href="https://cdn.datatables.net/2.0.7/css/dataTables.bootstrap4.min.css" rel="stylesheet">
 
     <!-- Favicon -->
-    <link href="{{ asset('img/favicon.png') }}" rel="icon" type="image/png">
+    <link href="{{ asset('favicon.ico') }}" rel="icon" type="image/x-icon">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     @yield('scripts')
 </head>
@@ -43,7 +43,7 @@
 
         <!-- Divider -->
         <hr class="sidebar-divider my-0">
-        @if(Auth::check() && Auth::user()->usertype == 'admin')
+        @if(Auth::check() && Auth::user()->usertype === \App\Enums\UserType::Admin)
 
         <!-- Nav Item - Dashboard -->
         <li class="nav-item ">
@@ -99,7 +99,7 @@
         <hr class="sidebar-divider my-0">
 
         @endif
-        @if(Auth::check() && Auth::user()->usertype == 'supervisor')
+        @if(Auth::check() && Auth::user()->usertype === \App\Enums\UserType::Supervisor)
 
         <!-- Nav Item - Dashboard -->
         <li class="nav-item ">
@@ -132,7 +132,7 @@
             </a>
         </li>
         @endif
-        @if(Auth::check() && Auth::user()->usertype == 'intern')
+        @if(Auth::check() && Auth::user()->usertype === \App\Enums\UserType::Intern)
 
         <!-- Nav Item - Dashboard -->
         <li class="nav-item ">
@@ -267,7 +267,7 @@
             <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
             <div class="modal-footer">
                 <button class="btn btn-link" type="button" data-dismiss="modal">{{ __('Cancel') }}</button>
-                <a class="btn btn-danger" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">{{ __('Logout') }}</a>
+                <button class="btn btn-danger" type="submit" form="logout-form">{{ __('Logout') }}</button>
                 <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
                     @csrf
                 </form>

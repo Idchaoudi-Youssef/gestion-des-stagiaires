@@ -25,7 +25,7 @@
                                 <td>{{ $report->intern->name }}</td>
                                 <td>
                                     @if($report->file)
-                                        <a href="{{ Storage::url($report->file) }}" target="_blank">View File</a>
+                                        <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($report->file) }}" target="_blank" rel="noopener">View File</a>
                                     @else
                                         {{ $report->content }}
                                     @endif

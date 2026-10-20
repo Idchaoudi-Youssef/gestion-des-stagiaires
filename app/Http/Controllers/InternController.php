@@ -2,208 +2,208 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Task;
+use App\Enums\ReportState;
+use App\Enums\ReportType;
+use App\Enums\TaskState;
 use App\Models\Report;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
+use App\Models\Task;
 use App\Models\User;
-use App\Models\Internship;
+use App\Services\TaskStateService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class InternController extends Controller
 {
+    public function __construct(private readonly TaskStateService $taskStates) {}
 
-    public function index()
+    /**
+     * Statistics shown on the intern dashboard.
+     */
+    public function index(): View
     {
-        $user = User::find(Auth::id());
-        // Assuming $user holds the current authenticated user
+        $user = auth()->user();
         $internship = $user->internship;
 
-        // Calculate time left in the internship
-        $endDate = Carbon::parse($internship->end_date);
-        $now = Carbon::now();
-        $timeLeft = $now->diffInDays($endDate, false); // Set the second parameter to false to get a negative value if the date is in the past
+        // Number of days left before the end of the internship. When the
+        // dates are not known yet the internship is simply not started.
+        $timeLeft = $internship?->end_date !== null
+            ? now()->diffInDays($internship->end_date, false)
+            : null;
 
-        // Number of tasks
-        $completedTasks = $user->tasks()->where('state', 'completed')->count();
-        $pendingTasks = $user->tasks()->where('state', 'pending')->count();
-        $unfinishedTasks = $user->tasks()->where('state', 'unfinished')->count();
+        $tasks = $user->tasks()->get();
+        $this->taskStates->flagOverdueTasksIn($tasks);
 
-        // Fetch interns in the same department
-        $interns = User::where('department_id', $user->department_id)->where('usertype', 'intern')->get();
+        $completedTasks = $tasks->where('state', TaskState::Completed)->count();
+        $pendingTasks = $tasks->where('state', TaskState::Pending)->count();
+        $unfinishedTasks = $tasks->where('state', TaskState::Unfinished)->count();
 
-        return view('intern/home', compact(
+        // The other interns of the same department.
+        $interns = User::where('department_id', $user->department_id)
+            ->where('usertype', 'intern')
+            ->where('id', '!=', $user->id)
+            ->orderBy('name')
+            ->get();
+
+        return view('intern.home', compact(
             'timeLeft', 'unfinishedTasks', 'pendingTasks', 'completedTasks', 'interns'
         ));
     }
 
-
-    public function viewTasks()
+    /**
+     * The tasks given to the logged in intern.
+     */
+    public function viewTasks(): View
     {
-        $tasks = Task::where('intern_id', Auth::id())->get();
+        $tasks = Task::where('intern_id', auth()->id())->latest()->get();
+        $this->taskStates->flagOverdueTasksIn($tasks);
 
-        // Update tasks with passed deadlines before displaying
-        $this->updateTaskStates($tasks);
-
-        // Retrieve supervisors for the dropdown menu
-        $supervisors = User::where('usertype', 'supervisor')->get();
+        $supervisors = auth()->user()->supervisors()->orderBy('name')->get();
 
         return view('intern.tasks.index', compact('tasks', 'supervisors'));
     }
 
-    private function updateTaskStates($tasks)
+    /**
+     * The reports sent by the logged in intern.
+     */
+    public function viewReports(): View
     {
-        // Set the default timezone for Carbon to GMT+1
-        Carbon::setLocale('Europe/London'); // GMT +1 during daylight saving time
+        $reports = Report::where('intern_id', auth()->id())
+            ->with('supervisor')
+            ->latest()
+            ->get();
 
-        foreach ($tasks as $task) {
-            if ($task->limit_date) {
-                // Parse the limit_date with the GMT+1 timezone
-                $parsedDate = Carbon::parse($task->limit_date, 'Europe/London');
-
-                // Ensure the comparison is done in the same timezone
-                if ($parsedDate->lessThan(Carbon::now('Europe/London'))) {
-                    $task->state = 'unfinished';
-                    $task->save();
-                }
-            }
-        }
-    }
-
-    public function viewReports()
-    {
-        $reports = Report::where('intern_id', Auth::id())->with('supervisor')->get();
         return view('intern.reports.index', compact('reports'));
     }
-    public function addReport()
+
+    /**
+     * Form used to submit a report.
+     */
+    public function addReport(): View
     {
         return view('intern.reports.add');
     }
 
-    public function submitReport(Request $request)
-{
-    $rules = [
-        'file' => 'required|file|mimes:pdf,doc,docx|max:2048',
-        'type' => 'required|in:weekly,final',
-    ];
+    /**
+     * Store a report uploaded by the intern.
+     */
+    public function submitReport(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'file' => ['required', 'file', 'mimes:pdf,doc,docx', 'max:2048'],
+            'type' => ['required', Rule::in([ReportType::Weekly->value, ReportType::Final->value])],
+            'supervisor_id' => ['nullable', 'exists:users,id'],
+        ]);
 
-    if ($request->type === 'weekly') {
-        $rules['supervisor_id'] = 'required|exists:users,id';
-    }
+        $type = ReportType::from($validated['type']);
+        $supervisor = null;
 
-    $request->validate($rules);
+        // A weekly report has to be addressed to one of the supervisors of
+        // the intern.
+        if ($type === ReportType::Weekly) {
+            $supervisor = auth()->user()->supervisors()->find($validated['supervisor_id'] ?? null);
 
-    $intern = Auth::user();
-
-    // Check if the type is weekly to find supervisor
-    if ($request->type === 'weekly') {
-        $supervisor = $intern->supervisors()->find($request->supervisor_id);
-
-        if (!$supervisor) {
-            return redirect()->route('intern.reports')->with('error', 'Selected supervisor is not valid.');
+            if ($supervisor === null) {
+                return redirect()
+                    ->route('intern.reports')
+                    ->withErrors(['supervisor_id' => 'Please choose one of your supervisors.']);
+            }
         }
-    } else {
-        $supervisor = null; // Set supervisor to null if type is final
+
+        $path = $request->file('file')->store('reports', 'public');
+
+        Report::create([
+            'content' => '',
+            'type' => $type->value,
+            'intern_id' => auth()->id(),
+            'supervisor_id' => $supervisor?->id,
+            'file' => $path,
+            'state' => ReportState::Pending->value,
+        ]);
+
+        return redirect()
+            ->route('intern.reports')
+            ->with('success', 'Report submitted successfully.');
     }
 
-    $path = $request->file('file')->store('reports', 'public');
-
-    $report = new Report();
-    $report->content = ''; // No content, since we're using a file
-    $report->type = $request->type;
-    $report->intern_id = $intern->id;
-    $report->supervisor_id = $supervisor ? $supervisor->id : null; // Set supervisor_id based on type
-    $report->file = $path;
-
-    if ($request->type == 'final') {
-        $report->admin_id = 1; // Assuming admin_id 1 for simplicity
-    }
-
-    $report->save();
-
-    return redirect()->route('intern.reports')->with('success', 'Report submitted successfully.');
-}
-
-
-    public function attestation()
+    /**
+     * The internship certificate of the logged in intern.
+     */
+    public function attestation(): View
     {
-    $user = Auth::user();
-    $report = $user->reports()->where('type', 'final')->orderBy('created_at', 'desc')->first();
+        $user = auth()->user();
+        $internship = $user->internship;
 
+        $report = $user->reports()
+            ->where('type', ReportType::Final->value)
+            ->latest()
+            ->first();
 
-    // Fetch the internship details
-    $internship = Internship::where('intern_id', $user->id)->firstOrFail();
-    // Signatory details (these could be hardcoded or fetched from a configuration or another model)
-    $signatory_name = 'Nom du Signataire';
-    $signatory_position = 'Poste du Signataire';
-
-    // Company SIRET
-    $company_siret = '000 000 000 00000';
-
-    return view('intern.attestation', compact('user', 'internship', 'signatory_name', 'signatory_position', 'company_siret', 'report'));
+        return view('intern.attestation', [
+            'user' => $user,
+            'internship' => $internship,
+            'report' => $report,
+        ]);
     }
 
-
-    public function completeTask(Task $task)
+    /**
+     * Mark a task as completed. Only the intern the task belongs to can do
+     * it.
+     */
+    public function completeTask(Task $task): RedirectResponse
     {
-        // Mark the task as completed
-        $task->state = 'Completed';
-        $task->save();
+        $this->authorize('complete', $task);
 
-        // Redirect back with success message
-        return redirect()->back()->with('success', 'Task marked as completed successfully.');
+        $task->update(['state' => TaskState::Completed->value]);
+
+        return redirect()
+            ->back()
+            ->with('success', 'Task marked as completed successfully.');
     }
 
-    public function filter(Request $request)
+    /**
+     * Filter the tasks of the logged in intern by supervisor.
+     */
+    public function filter(Request $request): View
     {
-        // Retrieve the selected supervisor ID from the request
         $supervisorId = $request->input('supervisor');
 
-        // If no supervisor is selected, retrieve tasks for the logged-in intern
-        if (!$supervisorId) {
-            $tasks = Task::where('intern_id', Auth::id())->get();
-        } else {
-            // Filter tasks by the selected supervisor and the logged-in intern
-            $tasks = Task::where('supervisor_id', $supervisorId)
-                         ->where('intern_id', Auth::id())
-                         ->get();
-        }
+        $tasks = Task::where('intern_id', auth()->id())
+            ->when($supervisorId, fn ($query) => $query->where('supervisor_id', $supervisorId))
+            ->latest()
+            ->get();
 
-        // Retrieve supervisors for the dropdown menu
-        $supervisors = User::where('usertype', 'supervisor')->get();
+        $this->taskStates->flagOverdueTasksIn($tasks);
 
-        // Pass the $supervisors variable to the view
+        $supervisors = auth()->user()->supervisors()->orderBy('name')->get();
+
         return view('intern.tasks.index', compact('tasks', 'supervisors'));
     }
 
-    public function search(Request $request)
+    /**
+     * Search inside the tasks of the logged in intern.
+     */
+    public function search(Request $request): View
     {
         $query = $request->input('query');
         $supervisorId = $request->input('supervisor');
 
-        // Perform search and filter logic to get tasks based on the query and supervisor
-        $tasksQuery = Task::query();
+        $tasks = Task::where('intern_id', auth()->id())
+            ->when($query, function ($builder) use ($query) {
+                $builder->where(function ($nested) use ($query) {
+                    $nested->where('title', 'like', '%'.$query.'%')
+                        ->orWhere('description', 'like', '%'.$query.'%');
+                });
+            })
+            ->when($supervisorId, fn ($builder) => $builder->where('supervisor_id', $supervisorId))
+            ->latest()
+            ->get();
 
-        if ($query) {
-            $tasksQuery->where(function ($q) use ($query) {
-                $q->where('title', 'like', '%'.$query.'%')
-                  ->orWhere('description', 'like', '%'.$query.'%')
-                  ->orWhere('state', 'like', '%'.$query.'%');
-            });
-        }
+        $this->taskStates->flagOverdueTasksIn($tasks);
 
-        if ($supervisorId) {
-            $tasksQuery->where('supervisor_id', $supervisorId);
-        }
-
-        $tasks = $tasksQuery->get();
-
-        // Retrieve supervisors for the dropdown menu
-        $supervisors = User::where('usertype', 'supervisor')->get();
+        $supervisors = auth()->user()->supervisors()->orderBy('name')->get();
 
         return view('intern.tasks.index', compact('tasks', 'supervisors'));
     }
-
 }

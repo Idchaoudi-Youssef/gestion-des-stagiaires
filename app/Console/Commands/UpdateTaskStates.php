@@ -2,31 +2,22 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\Task;
-use Carbon\Carbon;
+use App\Services\TaskStateService;
+use Illuminate\Console\Command;
 
 class UpdateTaskStates extends Command
 {
     protected $signature = 'tasks:update-states';
-    protected $description = 'Update task states based on their limit dates';
 
-    public function __construct()
+    protected $description = 'Flag the pending tasks whose deadline has passed as unfinished';
+
+    public function handle(TaskStateService $taskStates): int
     {
-        parent::__construct();
-    }
+        $updated = $taskStates->flagOverdueTasks(Task::query());
 
-    public function handle()
-    {
-        $tasks = Task::where('state', 'Pending')
-            ->where('limit_date', '<', Carbon::now())
-            ->get();
+        $this->info("{$updated} task(s) updated.");
 
-        foreach ($tasks as $task) {
-            $task->state = 'Unfinished';
-            $task->save();
-        }
-
-        $this->info('Task states updated successfully.');
+        return self::SUCCESS;
     }
 }
