@@ -53,6 +53,8 @@
                                 acting as <strong>{{ $signatory['position'] }}</strong>
                             @endif
                             in the company <strong>{{ $company['name'] }}</strong>,
+                        @else
+                            The undersigned, in the company <strong>{{ $company['name'] }}</strong>,
                         @endif
                         certify that <strong>{{ $user->name }}</strong>,
                         residing at <strong>{{ $user->address }}</strong>, completed an internship lasting

@@ -97,6 +97,13 @@
 Anyone who registers on their own gets a **pending** account: they can sign in
 but they do not reach any dashboard until an administrator gives them a role.
 
+### 👤 No account is invented
+
+The installation creates the departments and nothing else. The first
+administrator is created by the person who installs the application with
+`php artisan app:create-admin`, and the interns and the supervisors are then
+added from the interface with their own information.
+
 ---
 
 ## 🔐 Roles and permissions
@@ -164,28 +171,58 @@ php artisan key:generate
 # 5. Create the SQLite database
 touch database/database.sqlite   # Windows PowerShell: New-Item database\database.sqlite
 
-# 6. Create the tables and the demo data
+# 6. Create the tables and the departments
 php artisan migrate --seed
 
-# 7. Expose the uploaded files
+# 7. Create your own administrator account
+php artisan app:create-admin
+
+# 8. Expose the uploaded files
 php artisan storage:link
 
-# 8. Start the server
+# 9. Start the server
 php artisan serve
 ```
 
 The application is then available on <http://127.0.0.1:8000>.
 
-### Demo accounts
+### 👤 Your administrator account
 
-Created by `php artisan migrate --seed`. The password is `password` for all of them.
+The project **ships without any account**: nobody is invented for you. You
+decide who the administrator is:
 
-| Role | Email | Lands on |
+```bash
+php artisan app:create-admin
+```
+
+The command asks for the name, the email address and the password. You can
+also pass them directly:
+
+```bash
+php artisan app:create-admin --name="Your Name" --email="you@example.com" --password="a-strong-password"
+```
+
+From there you sign in, open **Users → Add User**, and add your interns and
+supervisors with their own information.
+
+### 🎭 Optional demo data
+
+If you would rather look around before creating your own accounts, you can
+load a set of obviously fake ones:
+
+```bash
+php artisan db:seed --class=DemoSeeder
+```
+
+| Role | Email | Password |
 |---|---|---|
-| Administrator | `demo.admin@example.com` | `/admin/dashboard` |
-| Supervisor | `demo.supervisor@example.com` | `/supervisor/dashboard` |
-| Intern | `demo.intern@example.com` | `/intern/dashboard` |
-| Pending | `demo.pending@example.com` | `/pending` |
+| Administrator | `demo.admin@example.com` | `password` |
+| Supervisor | `demo.supervisor@example.com` | `password` |
+| Intern | `demo.intern@example.com` | `password` |
+| Pending | `demo.pending@example.com` | `password` |
+
+They are named `Demo …` on purpose, and they are **never** created by
+`php artisan migrate --seed`.
 
 ---
 
