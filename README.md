@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://laravel.com"><img src="https://img.shields.io/badge/Laravel-12.70-FF2D20?style=flat-square&logo=laravel&logoColor=white" alt="Laravel 12"></a>
   <a href="https://php.net"><img src="https://img.shields.io/badge/PHP-8.2%2B-777BB4?style=flat-square&logo=php&logoColor=white" alt="PHP 8.2+"></a>
-  <a href="tests"><img src="https://img.shields.io/badge/tests-90%20passing-16a34a?style=flat-square&logo=phpunit&logoColor=white" alt="90 tests passing"></a>
+  <a href="tests"><img src="https://img.shields.io/badge/tests-95%20passing-16a34a?style=flat-square&logo=phpunit&logoColor=white" alt="90 tests passing"></a>
   <a href="composer.json"><img src="https://img.shields.io/badge/composer%20audit-0%20vulnerabilities-16a34a?style=flat-square" alt="0 vulnerabilities"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-4e73df?style=flat-square" alt="MIT License"></a>
 </p>
@@ -134,7 +134,7 @@ The fine-grained rules live in `App\Policies\TaskPolicy`:
 | Eloquent | ORM |
 | SQLite / MySQL | database |
 | Blade | views (SB Admin 2) |
-| Pest | test suite — 90 tests |
+| Pest | test suite - 95 tests |
 | Chart.js | dashboard charts (CDN) |
 | DataTables | sortable tables (CDN) |
 
@@ -293,7 +293,7 @@ this line to the crontab of the server:
 php artisan test
 ```
 
-90 tests covering:
+95 tests covering:
 
 - the access rules per role (who can see what);
 - the isolation of the tasks of an intern (nobody can complete or search the

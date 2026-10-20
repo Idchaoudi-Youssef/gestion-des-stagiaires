@@ -1,4 +1,6 @@
 {
+    "name": "gestion-des-stagiaires",
+    "description": "Internship management platform: interns, supervisors, departments, tasks and reports.",
     "private": true,
     "type": "module",
     "scripts": {
