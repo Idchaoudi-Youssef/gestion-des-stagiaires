@@ -21,7 +21,7 @@
     <link href="https://cdn.datatables.net/2.0.7/css/dataTables.bootstrap4.min.css" rel="stylesheet">
 
     <!-- Favicon -->
-    <link href="{{ asset('favicon.ico') }}" rel="icon" type="image/x-icon">
+    <link href="{{ asset('favicon.png') }}" rel="icon" type="image/png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     @yield('scripts')
 </head>
