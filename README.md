@@ -1,152 +1,199 @@
-# Gestion des Stagiaires
+<h1 align="center">🎓 Gestion des Stagiaires</h1>
 
-Application web de gestion des internships: elle permet à une entreprise
-d'attribuer des stagiaires à des encadrants, de leur suivre des tâches, de
-recevoir leurs rapports (hebdomadaires et final) et de générer leur attestation
-de fin de stage.
+<p align="center">
+  <strong>Internship management platform</strong><br>
+  assign interns to supervisors, track their tasks, collect their reports<br>
+  and print their end-of-internship certificate.
+</p>
 
-Le projet est écrit en **Laravel 12** et fonctionne avec **SQLite** par défaut
-(ou MySQL/MariaDB si vous préférez).
+<p align="center">
+  <a href="https://laravel.com"><img src="https://img.shields.io/badge/Laravel-12.70-FF2D20?style=flat-square&logo=laravel&logoColor=white" alt="Laravel 12"></a>
+  <a href="https://php.net"><img src="https://img.shields.io/badge/PHP-8.2%2B-777BB4?style=flat-square&logo=php&logoColor=white" alt="PHP 8.2+"></a>
+  <a href="tests"><img src="https://img.shields.io/badge/tests-90%20passing-16a34a?style=flat-square&logo=phpunit&logoColor=white" alt="90 tests passing"></a>
+  <a href="composer.json"><img src="https://img.shields.io/badge/composer%20audit-0%20vulnerabilities-16a34a?style=flat-square" alt="0 vulnerabilities"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-4e73df?style=flat-square" alt="MIT License"></a>
+</p>
 
----
-
-## Fonctionnalités
-
-### Administrateur
-
-- Tableau de bord avec les compteurs (interns, encadrants, rapports) et trois
-  graphiques (interns créés par mois, répartition des stages, utilisateurs
-  par département).
-- Création, modification et suppression des comptes (interns, encadrants).
-- Gestion des départements.
-- Attribution des interns à un ou plusieurs encadrants.
-- Saisie des informations de stage (dates, durée, poste occupé).
-- Validation ou rejet des rapports finaux, avec motif de rejet.
-- Suppression des rapports rejetés.
-
-### Encadrant (supervisor)
-
-- Tableau de bord : interns rattachés et état de leurs tâches.
-- Création, modification et suppression des tâches, avec une date limite.
-- Consultation des rapports hebdomadaires reçus.
-
-### Intern (stagiaire)
-
-- Tableau de bord : jours restants, tâches par état, autres interns du
-  département.
-- Liste de ses tâches, filtrage par encadrant et recherche par mot-clé.
-- Passage d'une tâche en « terminée » (uniquement les tâches qui lui
-  appartiennent).
-- Envoi d'un rapport hebdomadaire ou final (PDF, Word).
-- Attestation de fin de stage, imprimable, une fois le rapport final validé.
-
-### Compte en attente (pending)
-
-Toute personne qui s'inscrit elle-même obtient un compte **pending** : elle
-peut se connecter mais elle n'accède à aucun espace tant qu'un administrateur
-ne lui a pas attribué un rôle. Avant cette correction, une inscription
-donneait l'accès complet à l'espace stagiaire.
+<p align="center">
+  <code>composer install</code> → <code>php artisan migrate --seed</code> → <code>php artisan serve</code><br>
+  <strong>No Node.js, no build step.</strong>
+</p>
 
 ---
 
-## Rôles et autorisations
+## 📸 Preview
 
-Le rôle est stocké en base et relu à **chaque requête** : révoquer un rôle
-prend effet immédiatement, sans attendre l'expiration de la session.
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/02-admin-dashboard.png" alt="Administrator dashboard"></td>
+<td width="50%"><img src="docs/screenshots/07-intern-dashboard.png" alt="Intern dashboard"></td>
+</tr>
+<tr>
+<td align="center"><b>Administrator dashboard</b><br><sub>counters + three charts</sub></td>
+<td align="center"><b>Intern dashboard</b><br><sub>tasks, deadline and team</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/screenshots/06-supervisor-tasks.png" alt="Supervisor task list"></td>
+<td width="50%"><img src="docs/screenshots/09-intern-certificate.png" alt="Internship certificate"></td>
+</tr>
+<tr>
+<td align="center"><b>Supervisor tasks</b><br><sub>create, edit, delete</sub></td>
+<td align="center"><b>Internship certificate</b><br><sub>printable, fully configurable</sub></td>
+</tr>
+</table>
 
-| Rôle       | Peut                                                                  |
-|------------|-----------------------------------------------------------------------|
-| `admin`    | tout                                                                |
-| `supervisor` | gérer ses tâches, voir les rapports de ses interns                   |
-| `intern`   | voir et compléter ses tâches, envoyer ses rapports                   |
-| `pending`  | rien, seulement la page « en attente de validation »                 |
+<details>
+<summary><b>More screenshots</b></summary>
 
-Les règles fines sont appliquées par `App\Policies\TaskPolicy` :
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/01-login.jpg" alt="Login page"></td>
+<td width="50%"><img src="docs/screenshots/03-admin-users.png" alt="Users list"></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/screenshots/04-admin-assign.png" alt="Assign interns to supervisors"></td>
+<td width="50%"><img src="docs/screenshots/05-supervisor-dashboard.png" alt="Supervisor dashboard"></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/screenshots/08-intern-tasks.png" alt="Intern task list"></td>
+<td width="50%">&nbsp;</td>
+</tr>
+</table>
 
-- seul l'encadrant qui a créé une tâche peut la modifier ou la supprimer ;
-- seul l'intern concerné peut passer une tâche en « terminée ».
+</details>
 
 ---
 
-## Technologies
+## ✨ Features
 
-| Outil              | Version / rôle                                    |
-|--------------------|---------------------------------------------------|
-| PHP                | 8.2+                                              |
-| Laravel            | 12                                                |
-| Eloquent           | ORM de Laravel                                    |
-| SQLite / MySQL     | base de données                                   |
-| Blade              | vues (SB Admin 2 + template DigiMedia)            |
-| Pest               | tests (77 tests)                                  |
-| Chart.js           | graphiques des tableaux de bord (CDN)             |
-| DataTables         | tri et recherche des tableaux (CDN)               |
+### 👨‍💼 Administrator
 
-Le projet **n'a besoin ni de Node.js ni d'un build front** pour tourner : les
-vues utilisent les assets statiques de `public/`. Le fichier `package.json` est
-conservé pour pouvoir ajouter du Tailwind plus tard, mais il n'est pas requis
-pour faire tourner l'application.
+| | |
+|---|---|
+| 📊 | Dashboard with counters and three charts (interns per month, internship status, users per department) |
+| 👥 | Create, edit and delete accounts (interns, supervisors, administrators) |
+| 🏢 | Manage the departments |
+| 🔗 | Assign interns to one or several supervisors, filtered by department |
+| 📅 | Fill in the internship details (dates, duration, position held) |
+| ✅ | Approve or reject final reports, with a reason for the rejection |
+| 🗑️ | Bulk-delete the rejected reports |
+
+### 👔 Supervisor
+
+- 📋 Dashboard listing the assigned interns and the state of their tasks
+- ✍️ Create, edit and delete tasks, with a deadline
+- 📑 Read the weekly reports sent by the interns
+
+### 🎒 Intern
+
+- 📊 Dashboard with the remaining days, the tasks per state and the department team
+- ✅ Mark a task as completed — only the tasks that belong to them
+- 🔎 Filter the tasks by supervisor and search by keyword
+- 📤 Send a weekly or final report (PDF, Word, max. 2 MB)
+- 📜 Printable internship certificate, available once the final report is approved
+
+### 🕓 Pending account
+
+Anyone who registers on their own gets a **pending** account: they can sign in
+but they do not reach any dashboard until an administrator gives them a role.
 
 ---
 
-## Installation
+## 🔐 Roles and permissions
 
-### Prérequis
+The role is stored in the database and read on **every request**, so revoking a
+role takes effect immediately instead of waiting for the session to expire.
 
-- PHP **8.2** ou plus, avec les extensions `mbstring`, `openssl`, `pdo`,
-  `tokenizer`, `xml`, `ctype`, `fileinfo`, `curl`.
-- [Composer](https://getcomposer.org/).
+| Role | Can |
+|---|---|
+| `admin` | everything |
+| `supervisor` | manage their own tasks, read the reports of their interns |
+| `intern` | see and complete their own tasks, send their own reports |
+| `pending` | nothing, only the "waiting for an administrator" page |
 
-### Étapes
+The fine-grained rules live in `App\Policies\TaskPolicy`:
+
+- only the supervisor who created a task may edit or delete it;
+- only the intern concerned may mark a task as completed.
+
+---
+
+## 🧰 Tech stack
+
+| Tool | Version / role |
+|---|---|
+| PHP | 8.2+ |
+| Laravel | 12 |
+| Eloquent | ORM |
+| SQLite / MySQL | database |
+| Blade | views (SB Admin 2) |
+| Pest | test suite — 90 tests |
+| Chart.js | dashboard charts (CDN) |
+| DataTables | sortable tables (CDN) |
+
+The application needs **neither Node.js nor a front-end build**: the views use
+the static assets of `public/`. `package.json` is kept for a possible future
+Tailwind setup but it is not required to run the project.
+
+---
+
+## 🚀 Getting started
+
+### Requirements
+
+- PHP **8.2** or newer, with the extensions `mbstring`, `openssl`, `pdo`,
+  `tokenizer`, `xml`, `ctype`, `fileinfo`, `curl`
+- [Composer](https://getcomposer.org/)
+
+### Installation
 
 ```bash
-# 1. Récupérer le projet
+# 1. Get the project
 git clone https://github.com/Idchaoudi-Youssef/gestion-des-stagiaires.git
 cd gestion-des-stagiaires
 
-# 2. Installer les dépendances PHP
+# 2. Install the PHP dependencies
 composer install
 
-# 3. Créer le fichier de configuration
-cp .env.example .env        # Windows : copy .env.example .env
+# 3. Create the configuration file
+cp .env.example .env          # Windows: copy .env.example .env
 
-# 4. Générer la clé de l'application
+# 4. Generate the application key
 php artisan key:generate
 
-# 5. Créer la base de données SQLite
-touch database/database.sqlite       # Windows PowerShell : New-Item database\database.sqlite
+# 5. Create the SQLite database
+touch database/database.sqlite   # Windows PowerShell: New-Item database\database.sqlite
 
-# 6. Créer les tables et les données de démonstration
+# 6. Create the tables and the demo data
 php artisan migrate --seed
 
-# 7. Donner accès au dossier des fichiers envoyés
+# 7. Expose the uploaded files
 php artisan storage:link
 
-# 8. Démarrer le serveur
+# 8. Start the server
 php artisan serve
 ```
 
-L'application est disponible sur <http://127.0.0.1:8000>.
+The application is then available on <http://127.0.0.1:8000>.
 
-### Comptes de démonstration
+### Demo accounts
 
-Créés par `php artisan migrate --seed`. Le mot de passe est `password` pour
-tous.
+Created by `php artisan migrate --seed`. The password is `password` for all of them.
 
-| Rôle         | Adresse e-mail            |
-|--------------|---------------------------|
-| Administrateur | `demo.admin@example.com`     |
-| Encadrant    | `demo.supervisor@example.com`  |
-| Stagiaire    | `demo.intern@example.com`      |
-| En attente   | `demo.pending@example.com`     |
+| Role | Email | Lands on |
+|---|---|---|
+| Administrator | `demo.admin@example.com` | `/admin/dashboard` |
+| Supervisor | `demo.supervisor@example.com` | `/supervisor/dashboard` |
+| Intern | `demo.intern@example.com` | `/intern/dashboard` |
+| Pending | `demo.pending@example.com` | `/pending` |
 
 ---
 
-## Configuration
+## ⚙️ Configuration
 
-### Base de données
+### Database
 
-Par défaut l'application utilise SQLite. Pour MySQL ou MariaDB, décommentez le
-bloc correspondant dans `.env` :
+SQLite by default. For MySQL or MariaDB, uncomment the block in `.env`:
 
 ```dotenv
 DB_CONNECTION=mysql
@@ -157,13 +204,12 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-### Identité de l'entreprise
+### Company identity
 
-Les informations imprimées sur l'attestation de stage et affichées dans la
-barre latérale se configurent dans `.env`. **Les valeurs sont vides par
-défaut** : remplissez-les dans votre propre fichier `.env`, qui n'est jamais
-commité, pour qu'aucune donnée réelle d'entreprise ne se retrouve dans le
-dépôt.
+The details printed on the internship certificate and shown in the sidebar are
+read from the environment. **Every value is empty by default**: fill them in
+your own `.env` file, which is never committed, so no real company data ends
+up in the repository.
 
 ```dotenv
 COMPANY_NAME=""
@@ -178,58 +224,56 @@ SIGNATORY_POSITION=""
 SIGNATURE_IMAGE=""
 ```
 
-`COMPANY_LOGO` et `SIGNATURE_IMAGE` sont des chemins de fichiers situés dans
-le dossier `public/`. Un logo de remplacement neutre
-(`public/img/logo-placeholder.svg`) est fourni : déposez votre propre logo
-dans `public/` et indiquez son chemin. Laissez `SIGNATURE_IMAGE` vide pour
-imprimer l'attestation sans signature.
+`COMPANY_LOGO` and `SIGNATURE_IMAGE` are paths of files inside `public/`. A
+neutral placeholder (`public/img/logo-placeholder.svg`) is provided: drop your
+own logo in `public/` and point the variable at it. Leave `SIGNATURE_IMAGE`
+empty to print the certificate without a signature.
 
 ---
 
-## Tâches planifiées
+## ⏰ Scheduled tasks
 
-Deux commandes Artisan font le ménage et sont enregistrées dans le
-planificateur de Laravel :
+Two Artisan commands keep the state of the platform up to date:
 
 ```bash
-php artisan tasks:update-states        # passe en « unfinished » les tâches en retard
-php artisan internships:close-finished # cloture les stages dont la date de fin est passée
-php artisan schedule:list              # voir le planning
+php artisan tasks:update-states         # flags the overdue tasks as unfinished
+php artisan internships:close-finished  # closes the internships that are over
+php artisan schedule:list               # see the schedule
 ```
 
-Pour qu'elles tournent automatiquement, ajoutez cette ligne dans la crontab
-du serveur :
+They are registered in the Laravel scheduler. To run them automatically, add
+this line to the crontab of the server:
 
 ```cron
-* * * * * cd /chemin/vers/gestion-des-stagiaires && php artisan schedule:run >> /dev/null 2>&1
+* * * * * cd /path/to/gestion-des-stagiaires && php artisan schedule:run >> /dev/null 2>&1
 ```
 
 ---
 
-## Tests
+## 🧪 Tests
 
 ```bash
 php artisan test
 ```
 
-Le suite couvre :
+90 tests covering:
 
-- l'accès selon le rôle (qui peut voir quoi) ;
-- l'isolation des tâches d'un intern (impossible de compléter ou de chercher
-  les tâches des autres) ;
-- l'isolation des tâches d'un encadrant ;
-- la protection des comptes administrateur et la suppression des départements ;
-- le cycle de vie des états d'une tâche et d'un stage ;
-- l'ouverture de **toutes** les pages de l'application (test de fumée : une
-  page qui répond avec une erreur 500 fait échouer le test).
+- the access rules per role (who can see what);
+- the isolation of the tasks of an intern (nobody can complete or search the
+  tasks of somebody else);
+- the isolation of the tasks of a supervisor;
+- the protection of the administrator accounts and the deletion of a department;
+- the life cycle of the state of a task and of an internship;
+- the submission of the reports and the certificate;
+- **a smoke test that opens every page of the application**: a page answering
+  with a server error makes the test fail.
 
-La base de données des tests est une base SQLite en mémoire, créée et
-détruite automatiquement. Aucun fichier `.env` n'est nécessaire pour lancer
-la suite.
+The test database is an in-memory SQLite database, created and dropped
+automatically. No `.env` file is needed to run the suite.
 
 ---
 
-## Structure du projet
+## 📁 Project structure
 
 ```
 app/
@@ -237,44 +281,44 @@ app/
 ├── Console/Commands/   # tasks:update-states, internships:close-finished
 ├── Http/
 │   ├── Controllers/    # Admin, Supervisor, Intern, Dashboard, Profile, Auth
-│   ├── Middleware/     # EnsureUserType : contrôle du rôle
+│   ├── Middleware/     # EnsureUserType: the role check
 │   └── Requests/       # LoginRequest
 ├── Models/             # User, Department, Internship, Task, Report, InternSupervisor
 ├── Policies/           # TaskPolicy
 └── Services/           # TaskStateService, InternshipService
 config/
-├── internship.php      # société et signataire de l'attestation
+├── internship.php      # company and signatory of the certificate
 database/
 ├── factories/          # User, Department, Task, Report, Internship
-├── migrations/         # schéma de la base
-└── seeders/            # données de démonstration
-resources/views/        # vues Blade (welcome, auth, admin, supervisor, intern)
+├── migrations/         # schema of the database
+└── seeders/            # demo data
+docs/screenshots/       # the images of this README
+resources/views/        # Blade views (welcome, auth, admin, supervisor, intern)
 routes/
-├── web.php             # routes de l'application
-├── auth.php            # routes d'authentification
-└── console.php         # commandes et planificateur
+├── web.php             # routes of the application
+├── auth.php            # authentication routes
+└── console.php         # commands and scheduler
 tests/
-├── Feature/            # tests fonctionnels
-└── Unit/               # tests unitaires des services
+├── Feature/            # functional tests
+└── Unit/               # unit tests of the services
 ```
 
 ---
 
-## Notes de sécurité
+## 🛡️ Security notes
 
-- Les mots de passe sont hachés par le cast `hashed` du modèle `User`.
-- Les fichiers envoyés par les interns sont limités à 2 Mo et aux formats
-  `pdf`, `doc`, `docx` (`mimes:pdf,doc,docx`).
-- Les requêtes qui modifient une donnée passent par des formulaires
-  protégée par `@csrf` et par la méthode HTTP adaptée (`@method('PUT')`,
-  `@method('DELETE')`).
-- La suppression d'un compte ou d'un département passe par des routes
-  `DELETE` protégées par le rôle administrateur.
-- `composer audit` ne remonte plus aucune vulnérabilité connue sur les
-  dépendances installées.
+- The passwords are hashed by the `hashed` cast of the `User` model.
+- The files uploaded by the interns are limited to 2 MB and to the `pdf`,
+  `doc` and `docx` formats (`mimes:pdf,doc,docx`).
+- Every request that changes a data goes through a form protected by `@csrf`
+  and by the matching HTTP method (`@method('PUT')`, `@method('DELETE')`).
+- The deletion of an account or of a department goes through `DELETE` routes
+  protected by the administrator role.
+- `composer audit` does not report any known vulnerability on the installed
+  dependencies.
 
 ---
 
-## Licence
+## 📄 License
 
-MIT — voir le fichier [LICENSE](LICENSE).
+MIT — see the [LICENSE](LICENSE) file.
