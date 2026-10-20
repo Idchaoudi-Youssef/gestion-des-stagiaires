@@ -28,3 +28,9 @@ ehthumbs.db
 
 # Uploaded reports and generated files
 /public/reports
+
+# Local branding of the company: the logo and the signature of the
+# certificate belong to your installation, they must never be committed.
+/public/with.png
+/public/without.png
+/public/signature.png

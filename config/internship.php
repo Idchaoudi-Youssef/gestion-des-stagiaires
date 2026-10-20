@@ -17,7 +17,9 @@
 return [
 
     'company' => [
-        'name' => env('COMPANY_NAME', env('APP_NAME', 'Gestion des Stagiaires')),
+        // An empty variable in the ".env" file must fall back to the name of
+        // the application, otherwise the header of the pages stays blank.
+        'name' => env('COMPANY_NAME') ?: env('APP_NAME', 'Gestion des Stagiaires'),
         'city' => env('COMPANY_CITY', ''),
         'phone' => env('COMPANY_PHONE', ''),
         'email' => env('COMPANY_EMAIL', ''),
