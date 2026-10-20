@@ -35,10 +35,10 @@
         <!-- Sidebar - Brand -->
         <a class="sidebar-brand d-flex align-items-center justify-content-center">
             <div class="sidebar-brand-icon rotate-n-1" >
-                <img src="{{ asset('img/logo-placeholder.svg') }}" style="width: 50px;">
+                <img src="{{ asset(config('internship.company.logo')) }}" alt="{{ config('internship.company.name') }}" style="width: 50px;">
 
             </div>
-            <div class="sidebar-brand-text mx-3">Company Name</div>
+            <div class="sidebar-brand-text mx-3">{{ config('internship.company.name') }}</div>
         </a>
 
         <!-- Divider -->

@@ -159,18 +159,30 @@ DB_PASSWORD=
 
 ### Identité de l'entreprise
 
-Les informations imprimées sur l'attestation de stage se configure dans `.env` :
+Les informations imprimées sur l'attestation de stage et affichées dans la
+barre latérale se configurent dans `.env`. **Les valeurs sont vides par
+défaut** : remplissez-les dans votre propre fichier `.env`, qui n'est jamais
+commité, pour qu'aucune donnée réelle d'entreprise ne se retrouve dans le
+dépôt.
 
 ```dotenv
-COMPANY_NAME="Company Name"
-COMPANY_CITY="City"
-COMPANY_PHONE="00 00 00 00 00"
-COMPANY_EMAIL="contact@example.com"
-COMPANY_SIRET="000 000 000 00000"
+COMPANY_NAME=""
+COMPANY_CITY=""
+COMPANY_PHONE=""
+COMPANY_EMAIL=""
+COMPANY_SIRET=""
+COMPANY_LOGO="img/logo-placeholder.svg"
 
-SIGNATORY_NAME="Signatory Name"
-SIGNATORY_POSITION="Company Director"
+SIGNATORY_NAME=""
+SIGNATORY_POSITION=""
+SIGNATURE_IMAGE=""
 ```
+
+`COMPANY_LOGO` et `SIGNATURE_IMAGE` sont des chemins de fichiers situés dans
+le dossier `public/`. Un logo de remplacement neutre
+(`public/img/logo-placeholder.svg`) est fourni : déposez votre propre logo
+dans `public/` et indiquez son chemin. Laissez `SIGNATURE_IMAGE` vide pour
+imprimer l'attestation sans signature.
 
 ---
 

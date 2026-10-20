@@ -129,6 +129,39 @@ test('the certificate appears once the final report is approved', function () {
         ->assertSee('Junior Web Developer');
 });
 
+test('the certificate is printed even when the company details are not configured', function () {
+    config([
+        'internship.company.name' => 'Test Company',
+        'internship.company.city' => '',
+        'internship.company.phone' => '',
+        'internship.company.email' => '',
+        'internship.company.siret' => '',
+        'internship.signatory.name' => '',
+        'internship.signatory.position' => '',
+        'internship.signatory.image' => '',
+    ]);
+
+    $admin = User::factory()->admin()->create();
+    $intern = User::factory()->intern()->create();
+
+    Internship::create([
+        'intern_id' => $intern->id,
+        'start_date' => now()->subMonths(6)->toDateString(),
+        'end_date' => now()->subDay()->toDateString(),
+        'status' => InternshipStatus::Finished->value,
+    ]);
+
+    $report = Report::factory()->final()->approved()->create(['intern_id' => $intern->id]);
+
+    $this->actingAs($admin)->post('/admin/approve-report/'.$report->id);
+
+    $this->actingAs($intern)
+        ->get('/intern/attestation')
+        ->assertOk()
+        ->assertSee('Internship Certificate')
+        ->assertSee('Test Company');
+});
+
 test('a rejected report shows the reason to the intern', function () {
     $admin = User::factory()->admin()->create();
     $intern = User::factory()->intern()->create();

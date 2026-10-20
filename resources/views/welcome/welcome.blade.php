@@ -57,7 +57,7 @@ https://templatemo.com/tm-568-digimedia
           <nav class="main-nav">
             <!-- ***** Logo Start ***** -->
             <a href="{{ route('welcome') }}" class="logo">
-              <img src="{{ asset('img/logo-placeholder.svg') }}" alt="" style="width: 130px">
+              <img src="{{ asset(config('internship.company.logo')) }}" alt="{{ config('internship.company.name') }}" style="width: 130px">
             </a>
             <!-- ***** Logo End ***** -->
             <!-- ***** Menu Start ***** -->
@@ -85,7 +85,7 @@ https://templatemo.com/tm-568-digimedia
               <div class="left-content show-up header-text wow fadeInLeft" data-wow-duration="1s" data-wow-delay="1s">
                 <div class="row">
                   <div class="col-lg-12">
-                    <h6>Company Name</h6>
+                    <h6>{{ config('internship.company.name') }}</h6>
                     <h2>Welcome back </h2>
                     <p> we are thrilled to have you here. Our platform is designed to support your growth and productivity. Interns can look forward to valuable learning experiences, while admins and supervisors can efficiently manage and oversee projects and teams. If you have any questions or need assistance, feel free to reach out to your mentor, supervisor, or the HR department. Let's work together towards success!</p>
                   </div>

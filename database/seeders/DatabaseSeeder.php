@@ -37,7 +37,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $supervisor = User::create([
-            'name' => 'Youssef Idchaoudi',
+            'name' => 'Demo Supervisor',
             'email' => 'demo.supervisor@example.com',
             'password' => 'password',
             'usertype' => UserType::Supervisor->value,

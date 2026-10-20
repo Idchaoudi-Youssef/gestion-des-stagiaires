@@ -23,14 +23,22 @@
             <div class="attestation">
                 <div class="header">
                     <div class="logo">
-                        <img src="{{ asset('img/logo-placeholder.svg') }}" alt="Company Logo">
+                        <img src="{{ asset($company['logo']) }}" alt="{{ $company['name'] }} logo">
                     </div>
                     <div class="company-info">
                         <h4>{{ $company['name'] }}</h4>
-                        <h4>{{ $company['city'] }}</h4>
-                        <h4>Phone: {{ $company['phone'] }}</h4>
-                        <h4>Email: {{ $company['email'] }}</h4>
-                        <h4>SIRET: {{ $company['siret'] }}</h4>
+                        @if ($company['city'])
+                            <h4>{{ $company['city'] }}</h4>
+                        @endif
+                        @if ($company['phone'])
+                            <h4>Phone: {{ $company['phone'] }}</h4>
+                        @endif
+                        @if ($company['email'])
+                            <h4>Email: {{ $company['email'] }}</h4>
+                        @endif
+                        @if ($company['siret'])
+                            <h4>SIRET: {{ $company['siret'] }}</h4>
+                        @endif
                     </div>
                 </div>
                 <div class="title">
@@ -38,8 +46,15 @@
                 </div>
                 <div class="content">
                     <p>
-                        I, the undersigned, {{ $signatory['name'] }}, acting as {{ $signatory['position'] }}
-                        in the company {{ $company['name'] }}, certify that <strong>{{ $user->name }}</strong>,
+                        @if ($signatory['name'] || $signatory['position'])
+                            I, the undersigned,
+                            @if ($signatory['name'])<strong>{{ $signatory['name'] }}</strong>@endif
+                            @if ($signatory['position'])
+                                acting as <strong>{{ $signatory['position'] }}</strong>
+                            @endif
+                            in the company <strong>{{ $company['name'] }}</strong>,
+                        @endif
+                        certify that <strong>{{ $user->name }}</strong>,
                         residing at <strong>{{ $user->address }}</strong>, completed an internship lasting
                         <strong>{{ $internship->internship_period }} months</strong> at our company
                         {{ $company['name'] }} from
@@ -52,11 +67,21 @@
                 </div>
                 <button onclick="window.print()" class="btn btn-primary print-button">Print Certificate</button>
                 <div class="signature">
-                    <p>Done at <strong>{{ $company['city'] }}</strong>, on <strong>{{ now()->format('d/m/Y') }}</strong></p>
-                    <p><strong>{{ $signatory['name'] }}</strong></p>
-                    <p><strong>{{ $signatory['position'] }}</strong></p>
-                    <br>
-                    <img src="{{ asset('img/logo-placeholder.svg') }}" alt="Signature">
+                    @if ($company['city'])
+                        <p>Done at <strong>{{ $company['city'] }}</strong>, on <strong>{{ now()->format('d/m/Y') }}</strong></p>
+                    @else
+                        <p>Done on <strong>{{ now()->format('d/m/Y') }}</strong></p>
+                    @endif
+                    @if ($signatory['name'])
+                        <p><strong>{{ $signatory['name'] }}</strong></p>
+                    @endif
+                    @if ($signatory['position'])
+                        <p><strong>{{ $signatory['position'] }}</strong></p>
+                    @endif
+                    @if ($signatory['image'])
+                        <br>
+                        <img src="{{ asset($signatory['image']) }}" alt="Signature">
+                    @endif
                 </div>
             </div>
         @elseif ($report && $report->state === \App\Enums\ReportState::Rejected)
