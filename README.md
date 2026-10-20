@@ -139,8 +139,8 @@ The fine-grained rules live in `App\Policies\TaskPolicy`:
 | DataTables | sortable tables (CDN) |
 
 The application needs **neither Node.js nor a front-end build**: the views use
-the static assets of `public/`. `package.json` is kept for a possible future
-Tailwind setup but it is not required to run the project.
+the static assets of `public/`. There is no `package.json`, no bundler and no
+compilation step — `composer install` is enough.
 
 ---
 
